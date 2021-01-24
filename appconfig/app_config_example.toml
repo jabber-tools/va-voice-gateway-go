@@ -13,6 +13,7 @@ vap_base_url = "http://localhost:7070"
 
 [asterisk]
 ari_url = "http://172.17.237.237:8088/ari"
+ws_url = "ws://172.17.237.237:8088/ari/events"
 username = "<<asterisk ARI username>>>"
 password = "<<asterisk ARI password>>>"
 app = "va-voicegw"
@@ -20,7 +21,7 @@ app = "va-voicegw"
 [core]
 port = 8083
 host = "0.0.0.0"
-tokio_channel_size = 10000
+channel_size = 10000
 
 [log]
 log_cfg = "/tmp/log4rs.yml"

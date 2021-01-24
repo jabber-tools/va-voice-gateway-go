@@ -9,6 +9,7 @@ type AppConfig struct {
 	Tts Tts
 	Nlp Nlp
 	NlpVap NlpVap
+	Asterisk Asterisk
 	Core Core
 	Log Log
 }
@@ -31,6 +32,7 @@ type NlpVap struct {
 
 type Asterisk struct {
 	AriUrl string `toml:"ari_url"`
+	WSUrl string `toml:"ws_url"`
 	Username string `toml:"username"`
 	Password string `toml:"password"`
 	App string `toml:"app"`
@@ -39,7 +41,7 @@ type Asterisk struct {
 type Core struct {
 	Port int `toml:"port"`
 	Host string `toml:"host"`
-	TokioChannelSize int `toml:"tokio_channel_size"`
+	ChannelSize int `toml:"channel_size"`
 }
 
 type Log struct {
