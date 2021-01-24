@@ -1,0 +1,26 @@
+[tts]
+tts_base_url = "http://localhost:8444"
+tts_base_url_asterisk = "http://192.168.1.107:8888"
+tts_api_basic_auth_token = "YWRtaW46c3VwZXJzZWNyZXQ="
+
+[nlp]
+target_nlp = "GDF" # GDF or VAP
+
+[nlpvap]
+username = "<<vap svc acc email>>>"
+password = "<<vap svc acc password>>>"
+vap_base_url = "http://localhost:7070"
+
+[asterisk]
+ari_url = "http://172.17.237.237:8088/ari"
+username = "<<asterisk ARI username>>>"
+password = "<<asterisk ARI password>>>"
+app = "va-voicegw"
+
+[core]
+port = 8083
+host = "0.0.0.0"
+tokio_channel_size = 10000
+
+[log]
+log_cfg = "/tmp/log4rs.yml"

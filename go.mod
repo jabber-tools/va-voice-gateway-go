@@ -1,5 +1,5 @@
-module va-voice-gw
+module github.com/va-voice-gateway
 
 go 1.15
 
-require github.com/gorilla/websocket v1.4.2 // indirect
+require github.com/BurntSushi/toml v0.3.1
