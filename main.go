@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -46,11 +48,25 @@ func main() {
 	fmt.Println("exiting!")
 }
 
+func slashHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Got http request /")
+}
+
 // placeholder for now. we will run APIs here at some moment
 func runhttp() {
-	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Got http request /")
-	}))
-	fmt.Println("Listening for requests on port 9990")
-	http.ListenAndServe(":9990", nil)
+	r := mux.NewRouter()
+	r.HandleFunc("/{channelId}/{botId}/{lang}", asterisk.AudioForkHandler)
+	r.HandleFunc("/", slashHandler)
+	fmt.Println("Listening for requests on port 8083")
+
+	srv := &http.Server{
+		Handler: r,
+		Addr:    "0.0.0.0:8083",
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	log.Fatal(srv.ListenAndServe())
+
 }
