@@ -7,14 +7,9 @@ import (
 	"github.com/CyCoreSystems/ari/v5/client/native"
 	"github.com/va-voice-gateway/appconfig"
 	"log"
-	"net/http"
-	"sync"
 )
 
-func Connect(appConfig *appconfig.AppConfig) {
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func Connect(ctx context.Context, appConfig *appconfig.AppConfig) {
 
 	fmt.Println("Connecting to Asterisk ARI")
 
@@ -30,8 +25,6 @@ func Connect(appConfig *appconfig.AppConfig) {
 		return
 	}
 
-	defer cl.Close()
-
 	fmt.Println("Connected")
 
 	info, err := cl.Asterisk().Info(nil)
@@ -42,80 +35,36 @@ func Connect(appConfig *appconfig.AppConfig) {
 
 	fmt.Println("Asterisk Info", "info", info)
 
-	fmt.Println("Starting listener app")
-
-	go listenApp(ctx, cl, channelHandler)
-	// spin up http server to prevent app from quiting. This will be replaced by AudioFork loop
-	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Got http request /")
-	}))
-	fmt.Println("Listening for requests on port 9990")
-	http.ListenAndServe(":9990", nil)
-
+	fmt.Println("Starting listenAsteriskEvents")
+	go listenAsteriskEvents(ctx, cl)
 }
 
-func listenApp(ctx context.Context, cl ari.Client, handler func(cl ari.Client, h *ari.ChannelHandle)) {
-	sub := cl.Bus().Subscribe(nil, "StasisStart")
-	end := cl.Bus().Subscribe(nil, "StasisEnd")
+func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
+	subStasisStart := cl.Bus().Subscribe(nil, "StasisStart")
+	subStasisEnd := cl.Bus().Subscribe(nil, "StasisEnd")
+	subChannelDtmfReceived := cl.Bus().Subscribe(nil, "ChannelDtmfReceived")
 
+	fmt.Println("listenAsteriskEvents: entering loop")
 	for {
 		select {
-		case e := <-sub.Events():
-			v := e.(*ari.StasisStart)
-			fmt.Println("Got stasis start", "channel", v.Channel.ID)
-			go handler(cl, cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID)))
-		case <-end.Events():
-			fmt.Println("Got stasis end")
-		case <-ctx.Done():
-			return
+			case e := <-subStasisStart.Events():
+				v := e.(*ari.StasisStart)
+				fmt.Println("Got StasisStart", "channel", v.Channel.ID)
+				_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+			case e := <-subStasisEnd.Events():
+				v := e.(*ari.StasisEnd)
+				fmt.Println("Got StasisEnd", "channel", v.Channel.ID)
+				_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+			case e := <-subChannelDtmfReceived.Events():
+				v := e.(*ari.ChannelDtmfReceived)
+				fmt.Println("Got ChannelDtmfReceived", "channel", v.Channel.ID)
+				fmt.Println("Digit", v.Digit)
+				_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+			case <-ctx.Done():
+				fmt.Println("listenAsteriskEvents: leaving the loop")
+				cl.Close() // disconnect from asterisk signal stream ws conn
+				return
 		}
 	}
-}
-
-func channelHandler(cl ari.Client, h *ari.ChannelHandle) {
-	fmt.Println("Running channel handler")
-
-	stateChange := h.Subscribe(ari.Events.ChannelStateChange)
-	defer stateChange.Cancel()
-
-	data, err := h.Data()
-	if err != nil {
-		fmt.Println("Error getting data", "error", err)
-		return
-	}
-	fmt.Println("Channel State", "state", data.State)
-
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		fmt.Println("Waiting for channel events")
-
-		defer wg.Done()
-
-		for {
-			select {
-			case <-stateChange.Events():
-				fmt.Println("Got state change request")
-
-				data, err = h.Data()
-				if err != nil {
-					fmt.Println("Error getting data", "error", err)
-					continue
-				}
-				fmt.Println("New Channel State", "state", data.State)
-
-				if data.State == "Up" {
-					stateChange.Cancel() // stop subscription to state change events
-					return
-				}
-			}
-		}
-	}()
-
-	h.Answer()
-
-	wg.Wait()
-
-	h.Hangup()
+	fmt.Println("listenAsteriskEvents: loop left!")
 }
