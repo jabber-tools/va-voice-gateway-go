@@ -55,7 +55,9 @@ func slashHandler(w http.ResponseWriter, r *http.Request) {
 // placeholder for now. we will run APIs here at some moment
 func runhttp(appConfig *appconfig.AppConfig) {
 	r := mux.NewRouter()
-	r.HandleFunc("/{channelId}/{botId}/{lang}", asterisk.AudioForkHandler)
+	r.HandleFunc("/{channelId}/{botId}/{lang}", func(w http.ResponseWriter, r *http.Request) {
+		asterisk.AudioForkHandler(w, r, appConfig)
+	})
 	r.HandleFunc("/", slashHandler)
 	fmt.Println("Listening for requests on port 8083")
 

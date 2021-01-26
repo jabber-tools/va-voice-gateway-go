@@ -3,13 +3,14 @@ package asterisk
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/va-voice-gateway/appconfig"
 	"net/http"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
 
 // see https://tutorialedge.net/golang/go-websocket-tutorial/
-func AudioForkHandler(w http.ResponseWriter, r *http.Request) {
+func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconfig.AppConfig) {
 	fmt.Println("AudioForkHandler called")
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -17,9 +18,17 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error when upgrading websocket connection", err)
 		return
 	}
+	defer conn.Close()
+
+	//
+	// Google Speech To Text - quick & dirty for now
+	// TBD: implement google streaming here as per:
+	// https://cloud.google.com/speech-to-text/docs/streaming-recognize
+	//
+
 
 	fmt.Println("AudioForkHandler: entering loop")
-	defer conn.Close()
+
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {

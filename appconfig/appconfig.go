@@ -12,6 +12,7 @@ type AppConfig struct {
 	Asterisk Asterisk
 	Core Core
 	Log Log
+	Temp Temp
 }
 
 type Tts struct {
@@ -46,6 +47,11 @@ type Core struct {
 
 type Log struct {
 	LogCfg string `toml:"log_cfg"`
+}
+
+type Temp struct {
+	SttMsSubKey string `toml:"stt_ms_sub_key"`
+	SttMsRegion string `toml:"stt_ms_region"`
 }
 
 func LoadAppConfig(cappCfgPath string) (*AppConfig, error) {
