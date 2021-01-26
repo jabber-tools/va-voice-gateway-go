@@ -52,6 +52,7 @@ type Log struct {
 type Temp struct {
 	SttMsSubKey string `toml:"stt_ms_sub_key"`
 	SttMsRegion string `toml:"stt_ms_region"`
+	SttGoogleCred string `toml:"stt_google_cred"`
 }
 
 func LoadAppConfig(cappCfgPath string) (*AppConfig, error) {

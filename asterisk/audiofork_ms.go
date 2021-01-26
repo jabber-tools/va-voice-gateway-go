@@ -132,11 +132,11 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconf
 			fmt.Println("Error when reading AudioFork message", err)
 			return
 		} else if messageType != websocket.BinaryMessage {
-			// fmt.Println("Received wrong AudioFork message type", messageType)
-			stream.Write(p)
+			fmt.Println("Received wrong AudioFork message type", messageType)
 			continue
 		} else {
-			fmt.Println("AudioFork bytes", p)
+			// fmt.Println("AudioFork bytes", p)
+			stream.Write(p)
 		}
 	}
 	fmt.Println("AudioForkHandler: loop left")

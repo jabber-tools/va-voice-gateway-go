@@ -29,3 +29,4 @@ log_cfg = "/tmp/log4rs.yml"
 [temp]
 stt_ms_sub_key = "<<real subscription key here>>"
 stt_ms_region = "westeurope"
+stt_google_cred = "/tmp/cred.json"

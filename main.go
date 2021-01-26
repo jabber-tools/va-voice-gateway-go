@@ -63,7 +63,7 @@ func runhttp(appConfig *appconfig.AppConfig) {
 
 	srv := &http.Server{
 		Handler: r,
-		Addr: fmt.Sprintf("%v:%v", appConfig.Core.Host, appConfig.Core.Port),
+		Addr:    fmt.Sprintf("%v:%v", appConfig.Core.Host, appConfig.Core.Port),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
