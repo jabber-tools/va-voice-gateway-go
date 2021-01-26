@@ -42,7 +42,7 @@ func main() {
 
 	asterisk.Connect(ctx, appConfig)
 	fmt.Println("Asterisk signal stream connected!")
-	go runhttp()
+	go runhttp(appConfig)
 	<-done
 	cancel()
 	fmt.Println("exiting!")
@@ -53,7 +53,7 @@ func slashHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // placeholder for now. we will run APIs here at some moment
-func runhttp() {
+func runhttp(appConfig *appconfig.AppConfig) {
 	r := mux.NewRouter()
 	r.HandleFunc("/{channelId}/{botId}/{lang}", asterisk.AudioForkHandler)
 	r.HandleFunc("/", slashHandler)
@@ -61,7 +61,7 @@ func runhttp() {
 
 	srv := &http.Server{
 		Handler: r,
-		Addr:    "0.0.0.0:8083",
+		Addr: fmt.Sprintf("%v:%v", appConfig.Core.Host, appConfig.Core.Port),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
