@@ -3,6 +3,10 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/CyCoreSystems/ari v4.8.4+incompatible h1:ysSB/I7gSxQVO/OqlSfcnJr3OOSCIHfc+2F5HEWCVLg=
 github.com/CyCoreSystems/ari/v5 v5.1.2 h1:/Ze75yyANGLo1VhhJZ69dXfdeVhc9pvi+AnQWTPkTws=
 github.com/CyCoreSystems/ari/v5 v5.1.2/go.mod h1:oSoeAuafmlIRrsIlQEQXpyo2k2sCBBVBVtaNXyTixSw=
+github.com/adambezecny/websocket v1.4.2 h1:dvarH4vL5WYUJlY2Ob9y9eM1Ba4eu65qMPxLNdz+gVc=
+github.com/adambezecny/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/adambezecny/websocket v1.4.3 h1:qYVGETLlsWGyTLy0+XadYmjVkB4qV3sxbr0e9nQbXzU=
+github.com/adambezecny/websocket v1.4.3/go.mod h1:XneC0wW16U3s8eXUd+ARc2u4yzSeUAjvRUZMmTXn88o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
