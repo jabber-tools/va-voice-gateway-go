@@ -1,14 +1,14 @@
 # Virtual Assistant Voice Gateway - GO POC
 
 ---
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-blue)](https://golang.org/)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](../../graphs/commit-activity)
 
-POC written in GO. Main purpose is to compare with Rust based version in terms of:
+VA Voice GW POC written in GO. Main purpose is to compare with Rust based version in terms of:
 
-performance (CPU)
-
-memory needs
-
-SW design (ease of coding etc.)
+- performance (CPU, throughput)
+- memory consumption
+- Last but not least: SW design (ease of coding, maintainability, etc.)
 
 ## Go design patterns
 - http://blog.ralch.com/tutorial/design-patterns/golang-singleton/
