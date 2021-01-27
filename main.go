@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
+	"github.com/va-voice-gateway/gateway"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,10 @@ import (
 )
 
 func main() {
+
+	// gateway included so that it will be included into compilation
+	// TBD: in reality it will be managed by actor object
+	_ = gateway.NewGateway(make([]gateway.BotConfig, 0))
 
 	ctx, cancel := context.WithCancel(context.Background())
 

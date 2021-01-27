@@ -4,8 +4,9 @@ package gateway
 // we probably do not need them in Go solution
 type Client struct {
 	ClientId string
-	PlaybackId string
+	PlaybackId *string
 	DoSTT bool
+	Terminate bool
 	Dtmf []string
 	BotId string
 	Lang string
@@ -17,6 +18,7 @@ func NewClient(clientId string, botId string, lang string, inviteParams map[stri
 		ClientId: clientId,
 		PlaybackId: nil,
 		DoSTT: false, // TBD: conditionally true for audio buffering feature
+		Terminate: false,
 		Dtmf: make([]string, 0),
 		BotId: botId,
 		Lang: lang,

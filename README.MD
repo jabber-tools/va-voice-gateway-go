@@ -17,3 +17,4 @@ SW design (ease of coding etc.)
 ## To check
 - [ ] Best way how to write constructor method (return type X vs *X)
 - [ ] Custom features + conditional compilation based on them. Possible?
+- [ ] Best way how to represent nullable values(Rust Option<T>). https://stackoverflow.com/questions/9993178/is-there-a-nice-way-to-simulate-a-maybe-or-option-type-in-go
