@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/va-voice-gateway/appconfig"
-	"github.com/va-voice-gateway/stt"
+	"github.com/va-voice-gateway/stt/google"
 	"log"
 	"net/http"
 )
@@ -25,7 +25,7 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconf
 	audioStream := make(chan []byte)
 
 	// TBD: call here either google or ms stt based on config
-	go stt.PerformGoogleSTT(appConfig, audioStream)
+	go google.PerformGoogleSTT(appConfig, audioStream)
 
 	log.Printf("AudioForkHandler: entering loop")
 

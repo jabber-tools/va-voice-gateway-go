@@ -7,6 +7,7 @@ import (
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
 	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/nlp"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ func main() {
 	// gateway included so that it will be included into compilation
 	// TBD: in reality it will be managed by actor object
 	_ = gateway.NewGateway(make([]gateway.BotConfig, 0))
+	_, _ =  nlp.GetBotConfigs()
 
 	ctx, cancel := context.WithCancel(context.Background())
 

@@ -1,6 +1,6 @@
 // +build linux
 
-package stt
+package microsoft
 
 import (
 	"fmt"
