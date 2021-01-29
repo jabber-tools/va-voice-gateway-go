@@ -1,10 +1,11 @@
 package asterisk
 
 import (
-	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/stt/google"
+	"github.com/va-voice-gateway/utils"
 	"log"
 	"net/http"
 )
@@ -12,34 +13,44 @@ import (
 var upgrader = websocket.Upgrader{} // use default options
 
 // see https://tutorialedge.net/golang/go-websocket-tutorial/
-func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconfig.AppConfig) {
-	fmt.Println("AudioForkHandler called")
+func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconfig.AppConfig, channelId *string, botId *string, lang *string, gateway *gateway.Gateway) {
+	log.Printf("AudioForkHandler called for channel %v\n", *channelId)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Error when upgrading websocket connection", err)
+		log.Println("Error when upgrading websocket connection", err)
 		return
 	}
 	defer conn.Close()
 
 	audioStream := make(chan []byte)
 
+	// TBD: GetSTTBotConfig tailored now for google STT only!
+	recognitionConfig := gateway.GetSTTBotConfig(botId, lang)
+	if recognitionConfig == nil {
+		log.Printf("Unable to find STT config for %v %v\n", *botId, *lang)
+		return
+	}
+
+	log.Printf("AudioForkHandler: recognitionConfig: \n")
+	utils.PrettyPrint(recognitionConfig)
+
 	// TBD: call here either google or ms stt based on config
-	go google.PerformGoogleSTT(appConfig, audioStream)
+	go google.PerformGoogleSTT(appConfig, audioStream, recognitionConfig, lang)
 
 	log.Printf("AudioForkHandler: entering loop")
 
 	for {
 		mt, p, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println("Error when reading AudioFork message", err)
+			log.Println("Error when reading AudioFork message", err)
 			return
 		} else if mt != websocket.BinaryMessage {
-			fmt.Println("Received wrong AudioFork message type", mt)
+			log.Println("Received wrong AudioFork message type", mt)
 		} else {
 			audioStream <- p
 			continue
 		}
 	}
-	fmt.Println("AudioForkHandler: loop left")
+	log.Println("AudioForkHandler: loop left")
 }

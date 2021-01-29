@@ -178,3 +178,28 @@ func (g *Gateway) ClientGetDtmf(clientId *string) *string {
 	return nil
 }
 
+func (g *Gateway) GetBotConfig(botId *string) *BotConfig {
+	for _, bc := range g.BotConfigs {
+		if bc.BotId == *botId {
+			return &bc
+		}
+	}
+	return nil
+}
+
+// TBD: right now working with google STT provider only should be renamed
+// same flaw has Rust version
+func (g *Gateway) GetSTTBotConfig(botId *string, lang *string) *google.RecognitionConfig {
+	botConfig := g.GetBotConfig(botId)
+	if botConfig != nil {
+		for _, langConfig := range botConfig.Channels.VoiceGW.Providers.Google.STT {
+			if langConfig.Lang == *lang {
+				return &langConfig.Cfg.SpeechRecognitionConfig
+			}
+		}
+	}
+	return nil
+}
+
+
+
