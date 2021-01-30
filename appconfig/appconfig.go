@@ -6,18 +6,18 @@ import (
 )
 
 type AppConfig struct {
-	Tts Tts
-	Nlp Nlp
-	NlpVap NlpVap
+	Tts      Tts
+	Nlp      Nlp
+	NlpVap   NlpVap
 	Asterisk Asterisk
-	Core Core
-	Log Log
-	Temp Temp
+	Core     Core
+	Log      Log
+	Temp     Temp
 }
 
 type Tts struct {
-	TtsBaseUrl string `toml:"tts_base_url"`
-	TtsBaseUrlAsterisk string `toml:"tts_base_url_asterisk"`
+	TtsBaseUrl           string `toml:"tts_base_url"`
+	TtsBaseUrlAsterisk   string `toml:"tts_base_url_asterisk"`
 	TtsApiBasicAuthToken string `toml:"tts_api_basic_auth_token"`
 }
 
@@ -26,23 +26,23 @@ type Nlp struct {
 }
 
 type NlpVap struct {
-	Username string `toml:"username"`
-	Password string `toml:"password"`
+	Username   string `toml:"username"`
+	Password   string `toml:"password"`
 	VapBaseUrl string `toml:"vap_base_url"`
 }
 
 type Asterisk struct {
-	AriUrl string `toml:"ari_url"`
-	WSUrl string `toml:"ws_url"`
+	AriUrl   string `toml:"ari_url"`
+	WSUrl    string `toml:"ws_url"`
 	Username string `toml:"username"`
 	Password string `toml:"password"`
-	App string `toml:"app"`
+	App      string `toml:"app"`
 }
 
 type Core struct {
-	Port int `toml:"port"`
-	Host string `toml:"host"`
-	ChannelSize int `toml:"channel_size"`
+	Port        int    `toml:"port"`
+	Host        string `toml:"host"`
+	ChannelSize int    `toml:"channel_size"`
 }
 
 type Log struct {

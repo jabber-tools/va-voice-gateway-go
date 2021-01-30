@@ -47,23 +47,23 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 	fmt.Println("listenAsteriskEvents: entering loop")
 	for {
 		select {
-			case e := <-subStasisStart.Events():
-				v := e.(*ari.StasisStart)
-				fmt.Println("Got StasisStart", "channel", v.Channel.ID)
-				_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
-			case e := <-subStasisEnd.Events():
-				v := e.(*ari.StasisEnd)
-				fmt.Println("Got StasisEnd", "channel", v.Channel.ID)
-				_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
-			case e := <-subChannelDtmfReceived.Events():
-				v := e.(*ari.ChannelDtmfReceived)
-				fmt.Println("Got ChannelDtmfReceived", "channel", v.Channel.ID)
-				fmt.Println("Digit", v.Digit)
-				_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
-			case <-ctx.Done():
-				fmt.Println("listenAsteriskEvents: leaving the loop")
-				cl.Close() // disconnect from asterisk signal stream ws conn
-				return
+		case e := <-subStasisStart.Events():
+			v := e.(*ari.StasisStart)
+			fmt.Println("Got StasisStart", "channel", v.Channel.ID)
+			_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+		case e := <-subStasisEnd.Events():
+			v := e.(*ari.StasisEnd)
+			fmt.Println("Got StasisEnd", "channel", v.Channel.ID)
+			_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+		case e := <-subChannelDtmfReceived.Events():
+			v := e.(*ari.ChannelDtmfReceived)
+			fmt.Println("Got ChannelDtmfReceived", "channel", v.Channel.ID)
+			fmt.Println("Digit", v.Digit)
+			_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+		case <-ctx.Done():
+			fmt.Println("listenAsteriskEvents: leaving the loop")
+			cl.Close() // disconnect from asterisk signal stream ws conn
+			return
 		}
 	}
 	fmt.Println("listenAsteriskEvents: loop left!")

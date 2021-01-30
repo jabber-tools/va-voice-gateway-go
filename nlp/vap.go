@@ -12,7 +12,7 @@ import (
 // /vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1
 func GetBotConfigs() ([]config.BotConfig, error) {
 
-	var botConfigs [] config.BotConfig
+	var botConfigs []config.BotConfig
 
 	content, err := ioutil.ReadFile("c:/tmp/botconfigs.json")
 	if err != nil {

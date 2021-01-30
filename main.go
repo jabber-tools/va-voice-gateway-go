@@ -19,7 +19,7 @@ import (
 
 func main() {
 
-	botCfgs, err :=  nlp.GetBotConfigs()
+	botCfgs, err := nlp.GetBotConfigs()
 	if err != nil {
 		fmt.Println("Error when loading bot configs")
 		log.Fatal(err)

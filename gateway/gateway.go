@@ -4,8 +4,6 @@ import (
 	"strings"
 )
 
-
-
 type Gateway struct {
 	Clients map[*string]Client
 }
@@ -99,5 +97,3 @@ func (g *Gateway) ClientGetDtmf(clientId *string) *string {
 	}
 	return nil
 }
-
-

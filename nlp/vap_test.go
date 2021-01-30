@@ -2,13 +2,13 @@ package nlp
 
 import (
 	"github.com/stretchr/testify/assert"
-	"testing"
 	"github.com/va-voice-gateway/utils"
+	"testing"
 )
 
 func TestGetBotConfigs(t *testing.T) {
 	botConfigs, err := GetBotConfigs()
-	if err!= nil {
+	if err != nil {
 		t.Fatalf("TestGetBotConfigs failed %v", err)
 	}
 
