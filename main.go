@@ -7,6 +7,7 @@ import (
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
 	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/nlp"
 	"log"
 	"net/http"
@@ -18,14 +19,15 @@ import (
 
 func main() {
 
-	botConfigs, err :=  nlp.GetBotConfigs()
+	botCfgs, err :=  nlp.GetBotConfigs()
 	if err != nil {
 		fmt.Println("Error when loading bot configs")
 		log.Fatal(err)
 		return
 	}
 
-	gateway := gateway.NewGateway(botConfigs)
+	_ = gateway.NewGateway()
+	botConfigs := config.NewBotConfigs(botCfgs)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -53,7 +55,7 @@ func main() {
 
 	asterisk.Connect(ctx, appConfig)
 	fmt.Println("Asterisk signal stream connected!")
-	go runhttp(appConfig, &gateway)
+	go runhttp(appConfig, &botConfigs)
 	<-done
 	cancel()
 	fmt.Println("exiting!")
@@ -66,14 +68,14 @@ func slashHandler(w http.ResponseWriter, r *http.Request) {
 // TBD: not sure whether we want to pass pointer to gateway like this
 // it will be rather hidden behind actor to enable access by multiple go routines
 // on the other hand if we use it only for reading configs it should be fine
-func runhttp(appConfig *appconfig.AppConfig, gateway *gateway.Gateway) {
+func runhttp(appConfig *appconfig.AppConfig, botConfigs *config.BotConfigs) {
 	r := mux.NewRouter()
 	r.HandleFunc("/{channelId}/{botId}/{lang}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		channelId := vars["channelId"]
 		botId := vars["botId"]
 		lang := vars["lang"]
-		asterisk.AudioForkHandler(w, r, appConfig, &channelId, &botId, &lang, gateway)
+		asterisk.AudioForkHandler(w, r, appConfig, &channelId, &botId, &lang, botConfigs)
 	})
 	r.HandleFunc("/", slashHandler)
 	fmt.Println("Listening for requests on port 8083")

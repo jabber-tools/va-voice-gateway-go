@@ -14,3 +14,13 @@ func PrettyPrint(structure interface{}) {
 		log.Println("BotConfigPrettyPrint error: ", err)
 	}
 }
+
+func StructToJsonString(structure interface{}) (*string, error) {
+	b, err := json.Marshal(structure)
+	if err == nil {
+		str := string(b)
+		return &str, nil
+	} else {
+		return nil, err
+	}
+}

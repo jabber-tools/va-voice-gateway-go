@@ -10,52 +10,11 @@ import (
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 	"io"
 	"log"
+	"github.com/va-voice-gateway/gateway/config"
 )
 
-// Structs below are used to parse REST based Google STT configuration which are used by VAP
-// These structs then needs to be transformed into respective GRPC based structs used by underlying Google APIs
-type RecognitionConfig struct {
-	Encoding int32                              `json:"encoding,omitempty"`
-	SampleRateHertz int32                       `json:"sampleRateHertz,omitempty"`
-	AudioChannelCount int32                     `json:"audioChannelCount,omitempty"`
-	EnableSeparateRecognitionPerChannel bool    `json:"enableSeparateRecognitionPerChannel,omitempty"`
-	LanguageCode string                         `json:"languageCode,omitempty"`
-	MaxAlternatives int32                       `json:"maxAlternatives,omitempty"`
-	ProfanityFilter bool                        `json:"profanityFilter,omitempty"`
-	SpeechContexts []*SpeechContext             `json:"speechContexts,omitempty"`
-	EnableWordTimeOffsets bool                  `json:"enableWordTimeOffsets,omitempty"`
-	EnableAutomaticPunctuation bool             `json:"enableAutomaticPunctuation,omitempty"`
-	DiarizationConfig *SpeakerDiarizationConfig `json:"diarizationConfig,omitempty"`
-	Metadata *RecognitionMetadata               `json:"metadata,omitempty"`
-	Model string                                `json:"model,omitempty"`
-	UseEnhanced bool                            `json:"useEnhanced,omitempty"`
-}
-
-type RecognitionMetadata struct {
-	InteractionType int32 `json:"interactionType,omitempty"`
-	IndustryNaicsCodeOfAudio uint32 `json:"industryNaicsCodeOfAudio,omitempty"`
-	MicrophoneDistance int32 `json:"microphoneDistance,omitempty"`
-	OriginalMediaType int32 `json:"originalMediaType,omitempty"`
-	RecordingDeviceType int32 `json:"recordingDeviceType,omitempty"`
-	RecordingDeviceName string `json:"recordingDeviceName,omitempty"`
-	OriginalMimeType string `json:"originalMimeType,omitempty"`
-	AudioTopic string `json:"audioTopic,omitempty"`
-}
-
-type SpeakerDiarizationConfig struct {
-	EnableSpeakerDiarization bool `json:"enableSpeakerDiarization,omitempty"`
-	MinSpeakerCount int32 `json:"minSpeakerCount,omitempty"`
-	MaxSpeakerCount int32 `json:"maxSpeakerCount,omitempty"`
-	SpeakerTag int32 `json:"speakerTag,omitempty"`
-}
-
-// TBD: are we missing boost attribute here (same in Rust version)?
-type SpeechContext struct {
-	Phrases []string `json:"phrases,omitempty"`
-}
-
 // truly quick & dirty, see rust based implementation for proper stuff
-func IntoGrpc(rc *RecognitionConfig, lang *string) *speechpb.RecognitionConfig {
+func IntoGrpc(rc *config.RecognitionConfig, lang *string) *speechpb.RecognitionConfig {
 	var encoding speechpb.RecognitionConfig_AudioEncoding
 	switch rc.Encoding {
 		case 0: encoding = speechpb.RecognitionConfig_LINEAR16 // default
@@ -183,15 +142,23 @@ func IntoGrpc(rc *RecognitionConfig, lang *string) *speechpb.RecognitionConfig {
 }
 
 // Google Speech To Text - https://cloud.google.com/speech-to-text/docs/streaming-recognize
-func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, recCfg *RecognitionConfig, lang *string) {
+func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, recCfg *config.RecognitionConfig, botConfigs *config.BotConfigs, botId *string, channelId *string, lang *string) {
+	log.Printf("PerformGoogleSTT called for channel %v\n", *channelId)
 	ctx := context.Background()
-	client, err := speech.NewClient(ctx, option.WithCredentialsFile(appConfig.Temp.SttGoogleCred))
+
+	credStr, err := utils.StructToJsonString(botConfigs.GetSTTGoogleCred(botId))
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Unable to retrieve Google STT Credentials")
+	}
+
+	credBytes := []byte(*credStr)
+	client, err := speech.NewClient(ctx, option.WithCredentialsJSON(credBytes))
+	if err != nil {
+		log.Println(err)
 	}
 	stream, err := client.StreamingRecognize(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	// Send the initial configuration message.
 	if err := stream.Send(&speechpb.StreamingRecognizeRequest{
@@ -203,7 +170,7 @@ func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, r
 			},
 		},
 	}); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	go func() {
@@ -226,14 +193,14 @@ func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, r
 				break
 			}
 			if err != nil {
-				log.Fatalf("Cannot stream results: %v", err)
+				log.Printf("Cannot stream results: %v\n", err)
 			}
 			if err := resp.Error; err != nil {
 				// Workaround while the API doesn't give a more informative error.
 				if err.Code == 3 || err.Code == 11 {
 					log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
 				}
-				log.Fatalf("Could not recognize: %v", err)
+				log.Printf("Could not recognize: %v\n", err)
 			}
 			for _, result := range resp.Results {
 				fmt.Printf("Result: %+v\n", result)

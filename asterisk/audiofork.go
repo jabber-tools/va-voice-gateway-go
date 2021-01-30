@@ -3,7 +3,7 @@ package asterisk
 import (
 	"github.com/gorilla/websocket"
 	"github.com/va-voice-gateway/appconfig"
-	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/stt/google"
 	"github.com/va-voice-gateway/utils"
 	"log"
@@ -13,7 +13,7 @@ import (
 var upgrader = websocket.Upgrader{} // use default options
 
 // see https://tutorialedge.net/golang/go-websocket-tutorial/
-func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconfig.AppConfig, channelId *string, botId *string, lang *string, gateway *gateway.Gateway) {
+func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconfig.AppConfig, channelId *string, botId *string, lang *string, botConfigs *config.BotConfigs) {
 	log.Printf("AudioForkHandler called for channel %v\n", *channelId)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -26,7 +26,7 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconf
 	audioStream := make(chan []byte)
 
 	// TBD: GetSTTBotConfig tailored now for google STT only!
-	recognitionConfig := gateway.GetSTTBotConfig(botId, lang)
+	recognitionConfig := botConfigs.GetSTTBotConfig(botId, lang)
 	if recognitionConfig == nil {
 		log.Printf("Unable to find STT config for %v %v\n", *botId, *lang)
 		return
@@ -36,7 +36,7 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconf
 	utils.PrettyPrint(recognitionConfig)
 
 	// TBD: call here either google or ms stt based on config
-	go google.PerformGoogleSTT(appConfig, audioStream, recognitionConfig, lang)
+	go google.PerformGoogleSTT(appConfig, audioStream, recognitionConfig, botConfigs, botId, channelId, lang)
 
 	log.Printf("AudioForkHandler: entering loop")
 

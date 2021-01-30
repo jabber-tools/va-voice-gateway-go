@@ -2,7 +2,7 @@ package nlp
 
 import (
 	"encoding/json"
-	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/gateway/config"
 	"io/ioutil"
 	"log"
 )
@@ -10,9 +10,9 @@ import (
 // for now just taking from file and parsing
 // in the future VAP API will be called:
 // /vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1
-func GetBotConfigs() ([]gateway.BotConfig, error) {
+func GetBotConfigs() ([]config.BotConfig, error) {
 
-	var botConfigs [] gateway.BotConfig
+	var botConfigs [] config.BotConfig
 
 	content, err := ioutil.ReadFile("c:/tmp/botconfigs.json")
 	if err != nil {
