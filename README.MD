@@ -10,6 +10,10 @@ VA Voice GW POC written in GO. Main purpose is to compare with Rust based versio
 - memory consumption
 - Last but not least: SW design (ease of coding, maintainability, etc.)
 
+## How to format the code
+```
+go fmt github.com/va-voice-gateway
+```
 ## Go design patterns
 - http://blog.ralch.com/tutorial/design-patterns/golang-singleton/
 - https://www.sohamkamani.com/golang/2018-06-20-golang-factory-patterns/

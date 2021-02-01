@@ -19,7 +19,22 @@ import (
 
 func main() {
 
-	botCfgs, err := nlp.GetBotConfigs()
+	fmt.Println("Starting Voice Gateway...")
+	appConfig, err := appconfig.LoadAppConfig("c:/tmp/cfggo.toml")
+	if err != nil {
+		fmt.Println("Error when loading app config")
+		log.Fatal(err)
+		return
+	}
+
+	fmt.Println("Voice Gateway config loaded")
+	fmt.Printf("%+v\n", appConfig)
+
+	vapActor := nlp.NewVapActor(appConfig.NlpVap.Username, appConfig.NlpVap.Password, appConfig.NlpVap.VapBaseUrl)
+	go vapActor.VapActorProcessingLoop()
+
+	//botCfgs, err := nlp.GetBotConfigs()
+	botCfgs, err := vapActor.GetBotConfigsFromVap()
 	if err != nil {
 		fmt.Println("Error when loading bot configs")
 		log.Fatal(err)
@@ -41,17 +56,6 @@ func main() {
 		fmt.Println(sig)
 		done <- true
 	}()
-
-	fmt.Println("Starting Voice Gateway...")
-	appConfig, err := appconfig.LoadAppConfig("c:/tmp/cfggo.toml")
-	if err != nil {
-		fmt.Println("Error when loading app config")
-		log.Fatal(err)
-		return
-	}
-
-	fmt.Println("Voice Gateway config loaded")
-	fmt.Printf("%+v\n", appConfig)
 
 	asterisk.Connect(ctx, appConfig)
 	fmt.Println("Asterisk signal stream connected!")
