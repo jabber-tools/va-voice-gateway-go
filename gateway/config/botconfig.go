@@ -175,7 +175,7 @@ func (bcs *botConfigs) GetNlpDialogflowCred(botId *string) *GDFCredentials {
 
 // deprecated, now we take configs from VAP
 // see GetBotConfigsFromVap
-func GetBotConfigs() ([]BotConfig, error) {
+func getBotConfigs() ([]BotConfig, error) {
 
 	var botConfigs []BotConfig
 
@@ -197,7 +197,7 @@ func GetBotConfigs() ([]BotConfig, error) {
 	return botConfigs, nil
 }
 
-func GetBotConfigsFromVap(va *nlp.VapActor) ([]BotConfig, error) {
+func getBotConfigsFromVap(va *nlp.VapActor) ([]BotConfig, error) {
 	c := make(chan string)
 	request := nlp.VapTokenRequest {Responder: c}
 	va.CommandsChannel <- request
@@ -234,8 +234,8 @@ func GetBotConfigsFromVap(va *nlp.VapActor) ([]BotConfig, error) {
 
 func BotConfigs(va *nlp.VapActor) *botConfigs {
 	once.Do(func() {
-		//configs, err := nlp.GetBotConfigs()
-		configs, err := GetBotConfigsFromVap(va)
+		//configs, err := nlp.getBotConfigs()
+		configs, err := getBotConfigsFromVap(va)
 		if err != nil {
 			fmt.Println("Error when loading bot configs")
 			log.Fatal(err)
