@@ -9,6 +9,7 @@ import (
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/nlp"
+	"github.com/va-voice-gateway/stt"
 	"log"
 	"net/http"
 	"os"
@@ -41,8 +42,13 @@ func main() {
 		return
 	}
 
-	_ = gateway.NewGateway()
+	gatewayActor := gateway.GatewayActor()
+	go gatewayActor.GatewayActorProcessingLoop()
+
 	botConfigs := config.NewBotConfigs(botCfgs)
+
+	sttActor := stt.STTResultsActor()
+	go sttActor.STTResultsActorProcessingLoop()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -69,9 +75,6 @@ func slashHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Got http request /")
 }
 
-// TBD: not sure whether we want to pass pointer to gateway like this
-// it will be rather hidden behind actor to enable access by multiple go routines
-// on the other hand if we use it only for reading configs it should be fine
 func runhttp(appConfig *appconfig.AppConfig, botConfigs *config.BotConfigs) {
 	r := mux.NewRouter()
 	r.HandleFunc("/{channelId}/{botId}/{lang}", func(w http.ResponseWriter, r *http.Request) {
@@ -93,5 +96,4 @@ func runhttp(appConfig *appconfig.AppConfig, botConfigs *config.BotConfigs) {
 	}
 
 	log.Fatal(srv.ListenAndServe())
-
 }

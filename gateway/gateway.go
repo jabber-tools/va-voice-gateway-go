@@ -1,14 +1,21 @@
 package gateway
 
 import (
+	"log"
 	"strings"
+	"sync"
+)
+
+var (
+	instance *gatewayActor
+	once sync.Once
 )
 
 type Gateway struct {
 	Clients map[*string]Client
 }
 
-func NewGateway() Gateway {
+func newGateway() Gateway {
 	return Gateway{
 		Clients: make(map[*string]Client),
 	}
@@ -96,4 +103,28 @@ func (g *Gateway) ClientGetDtmf(clientId *string) *string {
 		return &dtmfs
 	}
 	return nil
+}
+
+type gatewayActor struct {
+	CommandsChannel chan interface{}
+	Gateway Gateway
+}
+
+func GatewayActor() *gatewayActor {
+	once.Do(func() {
+		instance = &gatewayActor {
+			CommandsChannel: make(chan interface{}),
+			Gateway: newGateway(),
+		}
+	})
+	return instance
+}
+
+func (gwa *gatewayActor) GatewayActorProcessingLoop() {
+	for command := range gwa.CommandsChannel {
+		switch v := command.(type) {
+			default:
+				log.Printf("GatewayActorProcessingLoop.Unknown type, ignoring  %v\n", v)
+		}
+	}
 }

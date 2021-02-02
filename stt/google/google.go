@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
+	"github.com/va-voice-gateway/stt"
 	"github.com/va-voice-gateway/utils"
 	"google.golang.org/api/option"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
@@ -227,7 +228,7 @@ func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, r
 		}
 	}()
 
-	go func() {
+	go func(channelId *string) {
 		for {
 			resp, err := stream.Recv()
 			if err == io.EOF {
@@ -235,18 +236,37 @@ func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, r
 				break
 			}
 			if err != nil {
-				log.Printf("Cannot stream results: %v\n", err)
+				// log.Printf("Cannot stream results: %v\n", err)
+				stt.STTResultsActor().CommandsChannel <- stt.CommandErrorResult{
+					ChannelId: *channelId,
+					Error: err,
+				}
 			}
 			if err := resp.Error; err != nil {
 				// Workaround while the API doesn't give a more informative error.
 				if err.Code == 3 || err.Code == 11 {
 					log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
 				}
-				log.Printf("Could not recognize: %v\n", err)
+				// log.Printf("Could not recognize: %v\n", err)
+				stt.STTResultsActor().CommandsChannel <- stt.CommandErrorResult{
+					ChannelId: *channelId,
+					Error: fmt.Errorf("Could not recognize: %v\n", err),
+				}
 			}
 			for _, result := range resp.Results {
-				fmt.Printf("Result: %+v\n", result)
+				if result.IsFinal == true {
+					stt.STTResultsActor().CommandsChannel <- stt.CommandFinalResult {
+						ChannelId: *channelId,
+						Text: result.Alternatives[0].Transcript,
+					}
+				} else {
+					stt.STTResultsActor().CommandsChannel <- stt.CommandPartialResult {
+						ChannelId: *channelId,
+						Text: result.Alternatives[0].Transcript,
+					}
+				}
+				// fmt.Printf("Result: %+v\n", result)
 			}
 		}
-	}()
+	}(channelId)
 }
