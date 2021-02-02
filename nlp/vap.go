@@ -4,14 +4,14 @@ package nlp
 // https://stackoverflow.com/questions/27236827/idiomatic-way-to-make-a-request-response-communication-using-channels
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/va-voice-gateway/gateway/config"
+	"github.com/va-voice-gateway/appconfig"
 	"io/ioutil"
 	"log"
-	"time"
 	"net/http"
-	"bytes"
+	"time"
 )
 
 const DURATION_23_HOURS = 23 * 60 * 60
@@ -138,7 +138,12 @@ type VapActor struct {
 	CommandsChannel chan VapTokenRequest
 	VapTokenCache VapTokenCache
 }
-func NewVapActor(SvcAccUsr string, SvcAccPwd string, VapBaseUrl string) VapActor {
+func NewVapActor() VapActor {
+
+	SvcAccUsr := appconfig.AppConfig(nil).NlpVap.Username
+	SvcAccPwd := appconfig.AppConfig(nil).NlpVap.Password
+	VapBaseUrl := appconfig.AppConfig(nil).NlpVap.VapBaseUrl
+
 	cache :=NewVapTokenCache(SvcAccUsr, SvcAccPwd, VapBaseUrl)
 	chnl := make(chan VapTokenRequest)
 	return VapActor {
@@ -156,66 +161,4 @@ func (va *VapActor) VapActorProcessingLoop() {
 			command.Responder <- *token
 		}
 	}
-}
-
-
-// for now just taking from file and parsing
-// in the future VAP API will be called:
-// /vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1
-func GetBotConfigs() ([]config.BotConfig, error) {
-
-	var botConfigs []config.BotConfig
-
-	content, err := ioutil.ReadFile("c:/tmp/botconfigs.json")
-	if err != nil {
-		log.Printf("GetBotConfigs ReadFile error: %v", err)
-		return nil, err
-	}
-
-	data := []byte(content)
-
-	err = json.Unmarshal(data, &botConfigs)
-
-	if err != nil {
-		log.Printf("GetBotConfigs Unmarshal error: %v", err)
-		return nil, err
-	}
-
-	return botConfigs, nil
-}
-
-// this is target replacement of GetBotConfigs above
-func (va *VapActor) GetBotConfigsFromVap() ([]config.BotConfig, error) {
-	c := make(chan string)
-	request := VapTokenRequest {Responder: c}
-	va.CommandsChannel <- request
-	token := <- c
-
-	url := fmt.Sprintf("%s%s", va.VapTokenCache.VapBaseUrl, "/vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1")
-
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", token)
-	resp, err := client.Do(req)
-	defer resp.Body.Close()
-
-	if err != nil {
-		log.Printf("GetBotConfigsFromVap: error when calling  /vapapi/vap-mgmt/config-mgmt/v1: %v\n", err)
-		return nil, err
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("GetBotConfigsFromVap: error when reading http response: %v\n", err)
-		return nil, err
-	}
-
-	botConfigs := make([]config.BotConfig, 0)
-	err = json.Unmarshal(body, &botConfigs)
-	if err != nil {
-		log.Printf("GetBotConfigsFromVap: error when parsing json: %v\n", err)
-		return nil, err
-	}
-	return botConfigs, nil
 }

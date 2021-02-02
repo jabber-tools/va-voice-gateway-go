@@ -9,9 +9,11 @@ import (
 	"log"
 )
 
-func Connect(ctx context.Context, appConfig *appconfig.AppConfig) {
+func Connect(ctx context.Context) {
 
 	fmt.Println("Connecting to Asterisk ARI")
+
+	appConfig := appconfig.AppConfig(nil)
 
 	cl, err := native.Connect(&native.Options{
 		Application:  appConfig.Asterisk.App,

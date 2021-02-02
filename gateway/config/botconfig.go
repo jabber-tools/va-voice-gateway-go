@@ -1,5 +1,20 @@
 package config
 
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sync"
+	"github.com/va-voice-gateway/nlp"
+)
+
+var (
+	instance *botConfigs
+	once sync.Once
+)
+
 // Structs below are used to parse REST based Google STT configuration which are used by VAP
 // These structs then needs to be transformed into respective GRPC based structs used by underlying Google APIs
 type RecognitionConfig struct {
@@ -116,18 +131,12 @@ type GDFCredentials struct {
 	AuthProviderX509CertUrl string `json:"auth_provider_x509_cert_url"`
 	ClientX509CertUrl       string `json:"client_x509_cert_url"`
 }
-type BotConfigs struct {
-	BotConfigs []BotConfig
+type botConfigs struct {
+	configs []BotConfig
 }
 
-func NewBotConfigs(botConfigs []BotConfig) BotConfigs {
-	return BotConfigs{
-		BotConfigs: botConfigs,
-	}
-}
-
-func (bcs *BotConfigs) GetBotConfig(botId *string) *BotConfig {
-	for _, bc := range bcs.BotConfigs {
+func (bcs *botConfigs) GetBotConfig(botId *string) *BotConfig {
+	for _, bc := range bcs.configs {
 		if bc.BotId == *botId {
 			return &bc
 		}
@@ -137,7 +146,7 @@ func (bcs *BotConfigs) GetBotConfig(botId *string) *BotConfig {
 
 // TBD: right now working with google STT provider only should be renamed
 // same flaw has Rust version
-func (bcs *BotConfigs) GetSTTBotConfig(botId *string, lang *string) *RecognitionConfig {
+func (bcs *botConfigs) GetSTTBotConfig(botId *string, lang *string) *RecognitionConfig {
 	botConfig := bcs.GetBotConfig(botId)
 	if botConfig != nil {
 		for _, langConfig := range botConfig.Channels.VoiceGW.Providers.Google.STT {
@@ -149,16 +158,92 @@ func (bcs *BotConfigs) GetSTTBotConfig(botId *string, lang *string) *Recognition
 	return nil
 }
 
-func (bcs *BotConfigs) GetSTTGoogleCred(botId *string) *GDFCredentials {
+func (bcs *botConfigs) GetSTTGoogleCred(botId *string) *GDFCredentials {
 	if botConfig := bcs.GetBotConfig(botId); botConfig != nil {
 		return &botConfig.Channels.VoiceGW.Providers.Google.Credentials
 	}
 	return nil
 }
 
-func (bcs *BotConfigs) GetNlpDialogflowCred(botId *string) *GDFCredentials {
+func (bcs *botConfigs) GetNlpDialogflowCred(botId *string) *GDFCredentials {
 	if botConfig := bcs.GetBotConfig(botId); botConfig != nil {
 		return &botConfig.Brain.Dialogflow.Credentials
 	}
 	return nil
+}
+
+
+// deprecated, now we take configs from VAP
+// see GetBotConfigsFromVap
+func GetBotConfigs() ([]BotConfig, error) {
+
+	var botConfigs []BotConfig
+
+	content, err := ioutil.ReadFile("c:/tmp/botconfigs.json")
+	if err != nil {
+		log.Printf("GetBotConfigs ReadFile error: %v", err)
+		return nil, err
+	}
+
+	data := []byte(content)
+
+	err = json.Unmarshal(data, &botConfigs)
+
+	if err != nil {
+		log.Printf("GetBotConfigs Unmarshal error: %v", err)
+		return nil, err
+	}
+
+	return botConfigs, nil
+}
+
+func GetBotConfigsFromVap(va *nlp.VapActor) ([]BotConfig, error) {
+	c := make(chan string)
+	request := nlp.VapTokenRequest {Responder: c}
+	va.CommandsChannel <- request
+	token := <- c
+
+	url := fmt.Sprintf("%s%s", va.VapTokenCache.VapBaseUrl, "/vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1")
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", token)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		log.Printf("GetBotConfigsFromVap: error when calling  /vapapi/vap-mgmt/config-mgmt/v1: %v\n", err)
+		return nil, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("GetBotConfigsFromVap: error when reading http response: %v\n", err)
+		return nil, err
+	}
+
+	botConfigs := make([]BotConfig, 0)
+	err = json.Unmarshal(body, &botConfigs)
+	if err != nil {
+		log.Printf("GetBotConfigsFromVap: error when parsing json: %v\n", err)
+		return nil, err
+	}
+	return botConfigs, nil
+}
+
+func BotConfigs(va *nlp.VapActor) *botConfigs {
+	once.Do(func() {
+		//configs, err := nlp.GetBotConfigs()
+		configs, err := GetBotConfigsFromVap(va)
+		if err != nil {
+			fmt.Println("Error when loading bot configs")
+			log.Fatal(err)
+			return
+		}
+		instance = &botConfigs {
+			configs: configs,
+		}
+	})
+	return instance
 }

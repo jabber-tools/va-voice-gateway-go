@@ -7,10 +7,9 @@ import (
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/audio"
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/common"
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/speech"
-	"github.com/va-voice-gateway/appconfig"
 )
 
-func PerformMicrosoftSTT(appConfig *appconfig.AppConfig, audioStream chan []byte) {
+func PerformMicrosoftSTT(audioStream chan []byte, botId *string, channelId *string, lang *string) {
 	audioFormat, err := audio.GetWaveFormatPCM(8000, 16, 1)
 	if err != nil {
 		fmt.Println("GetWaveFormatPCM error: ", err)

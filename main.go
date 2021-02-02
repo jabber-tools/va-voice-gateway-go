@@ -21,31 +21,25 @@ import (
 func main() {
 
 	fmt.Println("Starting Voice Gateway...")
-	appConfig, err := appconfig.LoadAppConfig("c:/tmp/cfggo.toml")
-	if err != nil {
-		fmt.Println("Error when loading app config")
-		log.Fatal(err)
-		return
-	}
 
+	// load app config and caches it for global use
+	appConfigPath := "c:/tmp/cfggo.toml"
+	appconfig.AppConfig(&appConfigPath)
 	fmt.Println("Voice Gateway config loaded")
-	fmt.Printf("%+v\n", appConfig)
 
-	vapActor := nlp.NewVapActor(appConfig.NlpVap.Username, appConfig.NlpVap.Password, appConfig.NlpVap.VapBaseUrl)
+	vapActor := nlp.NewVapActor()
 	go vapActor.VapActorProcessingLoop()
 
-	//botCfgs, err := nlp.GetBotConfigs()
-	botCfgs, err := vapActor.GetBotConfigsFromVap()
-	if err != nil {
-		fmt.Println("Error when loading bot configs")
-		log.Fatal(err)
-		return
-	}
+	// TBD: passing vapActor here is kind of ugly
+	// maybe we should implement vap token management in
+	// different way considering token will expire only once per day
+	// mutex or rather rw lock should do fine here (same issue with rust version)
+	// load bot configs and caches it for global use
+	config.BotConfigs(&vapActor)
+	fmt.Println("Voice GW enabled Bot configs loaded")
 
 	gatewayActor := gateway.GatewayActor()
 	go gatewayActor.GatewayActorProcessingLoop()
-
-	botConfigs := config.NewBotConfigs(botCfgs)
 
 	sttActor := stt.STTResultsActor()
 	go sttActor.STTResultsActorProcessingLoop()
@@ -63,9 +57,9 @@ func main() {
 		done <- true
 	}()
 
-	asterisk.Connect(ctx, appConfig)
+	asterisk.Connect(ctx)
 	fmt.Println("Asterisk signal stream connected!")
-	go runhttp(appConfig, &botConfigs)
+	go runhttp()
 	<-done
 	cancel()
 	fmt.Println("exiting!")
@@ -75,17 +69,19 @@ func slashHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Got http request /")
 }
 
-func runhttp(appConfig *appconfig.AppConfig, botConfigs *config.BotConfigs) {
+func runhttp() {
 	r := mux.NewRouter()
 	r.HandleFunc("/{channelId}/{botId}/{lang}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		channelId := vars["channelId"]
 		botId := vars["botId"]
 		lang := vars["lang"]
-		asterisk.AudioForkHandler(w, r, appConfig, &channelId, &botId, &lang, botConfigs)
+		asterisk.AudioForkHandler(w, r, &channelId, &botId, &lang)
 	})
 	r.HandleFunc("/", slashHandler)
 	fmt.Println("Listening for requests on port 8083")
+
+	appConfig := appconfig.AppConfig(nil)
 
 	srv := &http.Server{
 		Handler: r,

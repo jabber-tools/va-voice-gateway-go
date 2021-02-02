@@ -2,7 +2,6 @@ package asterisk
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/stt/google"
 	"github.com/va-voice-gateway/utils"
@@ -13,8 +12,10 @@ import (
 var upgrader = websocket.Upgrader{} // use default options
 
 // see https://tutorialedge.net/golang/go-websocket-tutorial/
-func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconfig.AppConfig, channelId *string, botId *string, lang *string, botConfigs *config.BotConfigs) {
+func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string, botId *string, lang *string) {
 	log.Printf("AudioForkHandler called for channel %v\n", *channelId)
+
+	botConfigs := config.BotConfigs(nil)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -36,7 +37,7 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, appConfig *appconf
 	utils.PrettyPrint(recognitionConfig)
 
 	// TBD: call here either google or ms stt based on config
-	go google.PerformGoogleSTT(appConfig, audioStream, recognitionConfig, botConfigs, botId, channelId, lang)
+	go google.PerformGoogleSTT(audioStream, recognitionConfig, botId, channelId, lang)
 
 	log.Printf("AudioForkHandler: entering loop")
 

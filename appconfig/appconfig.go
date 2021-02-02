@@ -3,9 +3,16 @@ package appconfig
 import (
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"log"
+	"sync"
 )
 
-type AppConfig struct {
+var (
+	instance *appConfig
+	once sync.Once
+)
+
+type appConfig struct {
 	Tts      Tts
 	Nlp      Nlp
 	NlpVap   NlpVap
@@ -54,14 +61,27 @@ type Temp struct {
 	SttMsRegion string `toml:"stt_ms_region"`
 }
 
-func LoadAppConfig(cappCfgPath string) (*AppConfig, error) {
+func loadAppConfig(appCfgPath string) (*appConfig, error) {
 	fmt.Println("loading app config...")
 
-	var config AppConfig
-	if _, err := toml.DecodeFile(cappCfgPath, &config); err != nil {
+	var config appConfig
+	if _, err := toml.DecodeFile(appCfgPath, &config); err != nil {
 		return nil, err
 	}
 
 	return &config, nil
 
+}
+
+func AppConfig(appCfgPath *string) *appConfig {
+	once.Do(func() {
+		appConfig, err := loadAppConfig(*appCfgPath)
+		if err != nil {
+			fmt.Println("Error when loading app config")
+			log.Fatal(err)
+			return
+		}
+		instance = appConfig
+	})
+	return instance
 }

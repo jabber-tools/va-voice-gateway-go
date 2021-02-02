@@ -185,9 +185,12 @@ func IntoGrpc(rc *config.RecognitionConfig, lang *string) *speechpb.RecognitionC
 }
 
 // Google Speech To Text - https://cloud.google.com/speech-to-text/docs/streaming-recognize
-func PerformGoogleSTT(appConfig *appconfig.AppConfig, audioStream chan []byte, recCfg *config.RecognitionConfig, botConfigs *config.BotConfigs, botId *string, channelId *string, lang *string) {
+func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig, botId *string, channelId *string, lang *string) {
 	log.Printf("PerformGoogleSTT called for channel %v\n", *channelId)
 	ctx := context.Background()
+	_ = appconfig.AppConfig(nil) // not needed for now
+
+	botConfigs := config.BotConfigs(nil)
 
 	credStr, err := utils.StructToJsonString(botConfigs.GetSTTGoogleCred(botId))
 	if err != nil {
