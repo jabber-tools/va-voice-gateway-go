@@ -1,14 +1,7 @@
 package gateway
 
 import (
-	"log"
 	"strings"
-	"sync"
-)
-
-var (
-	instance *gatewayActor
-	once sync.Once
 )
 
 type Gateway struct {
@@ -25,8 +18,8 @@ func (g *Gateway) AddClient(client Client) {
 	g.Clients[&client.ClientId] = client
 }
 
-func (g *Gateway) RemoveClient(client Client) {
-	delete(g.Clients, &client.ClientId)
+func (g *Gateway) RemoveClient(clientId string) {
+	delete(g.Clients, &clientId)
 }
 
 func (g *Gateway) ClientSetPlaybackId(clientId *string, playbackId *string) {
@@ -105,26 +98,3 @@ func (g *Gateway) ClientGetDtmf(clientId *string) *string {
 	return nil
 }
 
-type gatewayActor struct {
-	CommandsChannel chan interface{}
-	Gateway Gateway
-}
-
-func GatewayActor() *gatewayActor {
-	once.Do(func() {
-		instance = &gatewayActor {
-			CommandsChannel: make(chan interface{}),
-			Gateway: newGateway(),
-		}
-	})
-	return instance
-}
-
-func (gwa *gatewayActor) GatewayActorProcessingLoop() {
-	for command := range gwa.CommandsChannel {
-		switch v := command.(type) {
-			default:
-				log.Printf("GatewayActorProcessingLoop.Unknown type, ignoring  %v\n", v)
-		}
-	}
-}
