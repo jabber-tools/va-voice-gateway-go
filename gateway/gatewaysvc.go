@@ -52,3 +52,71 @@ func (g *gatewaySvc) GetPlaybackId(clientId *string) *string {
 	return <- c
 }
 
+func (g *gatewaySvc) ResetPlaybackId(clientId *string) {
+	g.GWActor.CommandsChannel <- CommandResetPlaybackId {
+		ClientId: *clientId,
+	}
+}
+
+func (g *gatewaySvc) SetTerminating(clientId *string) {
+	g.GWActor.CommandsChannel <- CommandSetIsTerminating {
+		ClientId: *clientId,
+	}
+}
+
+func (g *gatewaySvc) GetTerminating(clientId *string) bool {
+	c := make(chan bool)
+	g.GWActor.CommandsChannel <- CommandGetIsTerminating {
+		ClientId: *clientId,
+		Responder: c,
+	}
+	return <- c
+}
+
+func (g *gatewaySvc) SetDoSTT(clientId *string, doSTT bool) {
+	g.GWActor.CommandsChannel <- CommandSetDoSTT {
+		ClientId: *clientId,
+		DoSTT: doSTT,
+	}
+}
+
+func (g *gatewaySvc) GetDoSTT(clientId *string) bool {
+	c := make(chan bool)
+	g.GWActor.CommandsChannel <- CommandGetDoSTT {
+		ClientId: *clientId,
+		Responder: c,
+	}
+	return <- c
+}
+
+func (g *gatewaySvc) GetBotIdLang(clientId *string) (string, string) {
+	c := make(chan BotIdLang)
+	g.GWActor.CommandsChannel <- CommandGetBotIdLang {
+		ClientId: *clientId,
+		Responder: c,
+	}
+	botidlang := <- c
+	return botidlang.BotId, botidlang.Lang
+}
+
+func (g *gatewaySvc) AddDtmf(clientId *string, dtmf string) {
+	g.GWActor.CommandsChannel <- CommandAddDtmf {
+		ClientId: *clientId,
+		Dtmf: dtmf,
+	}
+}
+
+func (g *gatewaySvc) GetDtmf(clientId *string) string {
+	c := make(chan string)
+	g.GWActor.CommandsChannel <- CommandGetDtmf {
+		ClientId: *clientId,
+		Responder: c,
+	}
+	return <- c
+}
+
+func (g *gatewaySvc) ResetDtmf(clientId *string) {
+	g.GWActor.CommandsChannel <- CommandResetDtmf {
+		ClientId: *clientId,
+	}
+}
