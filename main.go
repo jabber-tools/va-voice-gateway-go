@@ -29,11 +29,6 @@ func main() {
 	vapActor := actors.VapActor()
 	go vapActor.VapActorProcessingLoop()
 
-	// TBD: passing vapActor here is kind of ugly
-	// maybe we should implement vap token management in
-	// different way considering token will expire only once per day
-	// mutex or rather rw lock should do fine here (same issue with rust version)
-	// load bot configs and caches it for global use
 	config.BotConfigs()
 	fmt.Println("Voice GW enabled Bot configs loaded")
 
