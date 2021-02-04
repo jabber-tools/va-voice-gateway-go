@@ -1,8 +1,7 @@
 package gateway
 
 // in order to prevent cyclical dependencies gateway actor
-// is defined in gateway package and
-// not in actors package as remaining actors
+// is defined in gateway package
 
 import (
 	"github.com/va-voice-gateway/nlp"

@@ -1,4 +1,4 @@
-package actors
+package sttactors
 
 import (
 	"github.com/va-voice-gateway/gateway"

@@ -1,4 +1,4 @@
-package actorsvap
+package nlpactors
 
 import (
 	"github.com/stretchr/testify/assert"
