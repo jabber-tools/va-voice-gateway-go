@@ -5,6 +5,7 @@ package gateway
 // not in actors package as remaining actors
 
 import (
+	"github.com/va-voice-gateway/nlp"
 	"log"
 	"sync"
 )
@@ -58,8 +59,8 @@ type CommandSetDoSTT struct {
 // helper struct to bypass fact
 // go does not support tuples
 type BotIdLang struct {
-	BotId string
-	Lang string
+	BotId *string
+	Lang *string
 }
 
 type CommandGetBotIdLang struct {
@@ -79,6 +80,12 @@ type CommandGetDtmf struct {
 
 type CommandResetDtmf struct {
 	ClientId string
+}
+
+type CommandCallNLP struct {
+	ClientId string
+	Request nlp.NLPRequest
+	Responder chan nlp.NLPResponseResult
 }
 
 type gatewayActor struct {
@@ -132,8 +139,8 @@ func (gwa *gatewayActor) GatewayActorProcessingLoop() {
 			case CommandGetBotIdLang:
 				botId, lang := gwa.Gateway.ClientGetBotIdLang(&v.ClientId)
 				v.Responder <- BotIdLang{
-					BotId: *botId,
-					Lang: *lang,
+					BotId: botId,
+					Lang: lang,
 				}
 				break
 			case CommandAddDtmf:
@@ -145,6 +152,26 @@ func (gwa *gatewayActor) GatewayActorProcessingLoop() {
 				break
 			case CommandResetDtmf:
 				gwa.Gateway.ClientResetDtmf(&v.ClientId)
+				break
+
+			case CommandCallNLP:
+				go func() {
+					clientNLP := gwa.Gateway.ClientGetNLP(&v.ClientId)
+					if clientNLP != nil {
+						nlpResponse, err := clientNLP.InvokeNLP(&v.Request)
+						if err != nil {
+							v.Responder <- nlp.NLPResponseResult {
+								NLPResponse: nil,
+								Error: err,
+							}
+						} else {
+							v.Responder <- nlp.NLPResponseResult {
+								NLPResponse: nlpResponse,
+								Error: nil,
+							}
+						}
+					}
+				}()
 				break
 
 

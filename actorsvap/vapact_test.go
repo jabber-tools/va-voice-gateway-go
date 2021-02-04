@@ -1,4 +1,4 @@
-package actors
+package actorsvap
 
 import (
 	"github.com/stretchr/testify/assert"

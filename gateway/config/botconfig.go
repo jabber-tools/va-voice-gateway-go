@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/va-voice-gateway/actors"
+	"github.com/va-voice-gateway/appconfig"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -202,19 +202,14 @@ func getBotConfigs() ([]BotConfig, error) {
 	return botConfigs, nil
 }
 
-func getBotConfigsFromVap() ([]BotConfig, error) {
-	va := actors.VapActor()
-	c := make(chan string)
-	request := actors.VapTokenRequest{Responder: c}
-	va.CommandsChannel <- request
-	token := <- c
-
-	url := fmt.Sprintf("%s%s", va.VapTokenCache.VapBaseUrl, "/vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1")
+func getBotConfigsFromVap(vapToken *string) ([]BotConfig, error) {
+	vapBaseUrl := appconfig.AppConfig(nil).NlpVap.VapBaseUrl
+	url := fmt.Sprintf("%s%s", vapBaseUrl, "/vapapi/vap-mgmt/config-mgmt/v1?voiceEnabled=1")
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", token)
+	req.Header.Add("Authorization", *vapToken)
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 
@@ -238,10 +233,10 @@ func getBotConfigsFromVap() ([]BotConfig, error) {
 	return botConfigs, nil
 }
 
-func BotConfigs() *botConfigs {
+func BotConfigs(vapToken *string) *botConfigs {
 	once.Do(func() {
 		//configs, err := nlp.getBotConfigs()
-		configs, err := getBotConfigsFromVap()
+		configs, err := getBotConfigsFromVap(vapToken)
 		if err != nil {
 			fmt.Println("Error when loading bot configs")
 			log.Fatal(err)

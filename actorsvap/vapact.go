@@ -1,4 +1,4 @@
-package actors
+package actorsvap
 
 // https://yourbasic.org/golang/iota/
 // https://stackoverflow.com/questions/27236827/idiomatic-way-to-make-a-request-response-communication-using-channels

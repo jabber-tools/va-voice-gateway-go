@@ -45,6 +45,11 @@ type NLPResponse struct {
 	IsEOC bool
 }
 
+type NLPResponseResult struct {
+	NLPResponse *NLPResponse
+	Error error
+}
+
 type DiagnosticsInfo struct {
 	EndConversation bool `json:"end_conversation"`
 }
@@ -73,7 +78,7 @@ func NewVAP(ClientId string, BotId string, Lang string, InviteParams map[string]
 		return nil, err
 	}
 
-	botConfigs := config.BotConfigs()
+	botConfigs := config.BotConfigs(nil)
 	botConfig := botConfigs.GetBotConfig(&BotId)
 	if botConfig != nil {
 		return &VAP {

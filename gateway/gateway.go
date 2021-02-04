@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"github.com/va-voice-gateway/nlp"
 	"strings"
 )
 
@@ -98,3 +99,12 @@ func (g *Gateway) ClientGetDtmf(clientId *string) *string {
 	return nil
 }
 
+// in rust corresponds to clone_client_nlp
+// no need to clone in golang
+func (g *Gateway) ClientGetNLP(clientId *string) *nlp.VAP {
+	if client, ok := g.Clients[clientId]; ok {
+		return &client.NLP
+	} else {
+		return nil
+	}
+}

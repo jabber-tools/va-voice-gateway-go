@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/va-voice-gateway/actors"
+	"github.com/va-voice-gateway/actorsvap"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/gateway/config"
+	"github.com/va-voice-gateway/utils"
 	"log"
 	"net/http"
 	"os"
@@ -26,10 +28,12 @@ func main() {
 	appconfig.AppConfig(&appConfigPath)
 	fmt.Println("Voice Gateway config loaded")
 
-	vapActor := actors.VapActor()
+	vapActor := actorsvap.VapActor()
 	go vapActor.VapActorProcessingLoop()
 
-	config.BotConfigs()
+	vapToken := utils.GetVapAPIToken()
+
+	config.BotConfigs(vapToken)
 	fmt.Println("Voice GW enabled Bot configs loaded")
 
 	gatewayActor := gateway.GatewayActor()

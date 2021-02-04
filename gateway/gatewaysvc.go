@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"github.com/va-voice-gateway/nlp"
 	"sync"
 )
 
@@ -89,7 +90,7 @@ func (g *gatewaySvc) GetDoSTT(clientId *string) bool {
 	return <- c
 }
 
-func (g *gatewaySvc) GetBotIdLang(clientId *string) (string, string) {
+func (g *gatewaySvc) GetBotIdLang(clientId *string) (*string, *string) {
 	c := make(chan BotIdLang)
 	g.GWActor.CommandsChannel <- CommandGetBotIdLang{
 		ClientId: *clientId,
@@ -118,5 +119,20 @@ func (g *gatewaySvc) GetDtmf(clientId *string) string {
 func (g *gatewaySvc) ResetDtmf(clientId *string) {
 	g.GWActor.CommandsChannel <- CommandResetDtmf{
 		ClientId: *clientId,
+	}
+}
+
+func (g *gatewaySvc) CallNLP(clientId *string, nlpRequest nlp.NLPRequest) (*nlp.NLPResponse, error) {
+	c := make(chan nlp.NLPResponseResult)
+	g.GWActor.CommandsChannel <- CommandCallNLP{
+		ClientId: *clientId,
+		Request: nlpRequest,
+		Responder: c,
+	}
+	result := <- c
+	if result.NLPResponse != nil {
+		return result.NLPResponse, nil
+	} else {
+		return nil, result.Error
 	}
 }

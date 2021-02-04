@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/va-voice-gateway/actors"
+	"github.com/va-voice-gateway/actorsvap"
 	"log"
 )
 
@@ -27,9 +27,9 @@ func StructToJsonString(structure interface{}) (*string, error) {
 }
 
 func GetVapAPIToken() *string {
-	va := actors.VapActor()
+	va := actorsvap.VapActor()
 	c := make(chan string)
-	request := actors.VapTokenRequest{Responder: c}
+	request := actorsvap.VapTokenRequest{Responder: c}
 	va.CommandsChannel <- request
 	token := <- c
 	return &token

@@ -190,7 +190,7 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 	ctx := context.Background()
 	_ = appconfig.AppConfig(nil) // not needed for now
 
-	botConfigs := config.BotConfigs()
+	botConfigs := config.BotConfigs(nil)
 
 	credStr, err := utils.StructToJsonString(botConfigs.GetSTTGoogleCred(botId))
 	if err != nil {
