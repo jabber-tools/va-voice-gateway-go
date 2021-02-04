@@ -45,6 +45,27 @@ type NLPResponse struct {
 	IsEOC bool
 }
 
+type DiagnosticsInfo struct {
+	EndConversation bool `json:"end_conversation"`
+}
+
+type QueryResult struct {
+	DiagnosticsInfo *DiagnosticsInfo `json:"diagnosticInfo"`
+}
+
+type DialogFlowResponse struct {
+	QueryResult *QueryResult `json:"queryResult"`
+}
+
+type VAPCanonicalResponse struct {
+	DfResponse *DialogFlowResponse `json:"dfResponse"`
+}
+
+type VAPResponse struct {
+	CanonicalResponse VAPCanonicalResponse `json:"canonicalResponse"`
+	VoiceGWResponse string `json:"voice_gw_response"`
+}
+
 func NewVAP(ClientId string, BotId string, Lang string, InviteParams map[string]string) (*VAP, error) {
 
 	jsonStringInviteParams, err := json.Marshal(InviteParams)
@@ -160,8 +181,26 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 		return nil, err
 	}
 
-	log.Printf("body %s\n", body)
+	vapResponse := &VAPResponse{}
+	err = json.Unmarshal(body, vapResponse)
+	if err != nil {
+		log.Printf("InvokeNLP: error when parsing json: %v\n", err)
+		return nil, err
+	}
 
-	return nil, nil
+	var IsEOC bool
+	if vapResponse.CanonicalResponse.DfResponse != nil &&
+	   vapResponse.CanonicalResponse.DfResponse.QueryResult != nil &&
+	   vapResponse.CanonicalResponse.DfResponse.QueryResult.DiagnosticsInfo != nil &&
+		vapResponse.CanonicalResponse.DfResponse.QueryResult.DiagnosticsInfo.EndConversation == true {
+		IsEOC = true
+	} else {
+		IsEOC = false
+	}
+
+	return &NLPResponse {
+		Text: vapResponse.VoiceGWResponse,
+		IsEOC: IsEOC,
+	}, nil
 }
 
