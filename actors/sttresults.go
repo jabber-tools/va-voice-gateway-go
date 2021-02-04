@@ -1,4 +1,4 @@
-package stt
+package actors
 
 import (
 	"log"
@@ -8,8 +8,8 @@ import (
 // singleton based on pattern described here
 // http://blog.ralch.com/tutorial/design-patterns/golang-singleton/
 var (
-	instance *sttResultsActor
-	once sync.Once
+	_instance *sttResultsActor
+	_once sync.Once
 )
 
 type CommandErrorResult struct {
@@ -33,12 +33,12 @@ type sttResultsActor struct {
 }
 
 func STTResultsActor() *sttResultsActor {
-	once.Do(func() {
-		instance = &sttResultsActor {
+	_once.Do(func() {
+		_instance = &sttResultsActor{
 			CommandsChannel: make(chan interface{}),
 		}
 	})
-	return instance
+	return _instance
 }
 
 func (sttra *sttResultsActor) STTResultsActorProcessingLoop() {

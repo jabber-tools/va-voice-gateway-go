@@ -15,7 +15,7 @@ var upgrader = websocket.Upgrader{} // use default options
 func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string, botId *string, lang *string) {
 	log.Printf("AudioForkHandler called for channel %v\n", *channelId)
 
-	botConfigs := config.BotConfigs(nil)
+	botConfigs := config.BotConfigs()
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

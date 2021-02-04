@@ -25,19 +25,19 @@ func GatewayService() *gatewaySvc {
 }
 
 func (g *gatewaySvc) AddClient(client Client) {
-	g.GWActor.CommandsChannel <- CommandAddClient {
+	g.GWActor.CommandsChannel <- CommandAddClient{
 		Client: client,
 	}
 }
 
 func (g *gatewaySvc) RemoveClient(clientId string) {
-	g.GWActor.CommandsChannel <- CommandRemoveClient {
+	g.GWActor.CommandsChannel <- CommandRemoveClient{
 		ClientId: clientId,
 	}
 }
 
 func (g *gatewaySvc) SetPlaybackId(clientId *string, playbackId *string) {
-	g.GWActor.CommandsChannel <- CommandSetPlaybackId {
+	g.GWActor.CommandsChannel <- CommandSetPlaybackId{
 		ClientId: *clientId,
 		PlaybackId: *playbackId,
 	}
@@ -45,7 +45,7 @@ func (g *gatewaySvc) SetPlaybackId(clientId *string, playbackId *string) {
 
 func (g *gatewaySvc) GetPlaybackId(clientId *string) *string {
 	c := make(chan *string)
-	g.GWActor.CommandsChannel <- CommandGetPlaybackId {
+	g.GWActor.CommandsChannel <- CommandGetPlaybackId{
 		ClientId: *clientId,
 		Responder: c,
 	}
@@ -53,20 +53,20 @@ func (g *gatewaySvc) GetPlaybackId(clientId *string) *string {
 }
 
 func (g *gatewaySvc) ResetPlaybackId(clientId *string) {
-	g.GWActor.CommandsChannel <- CommandResetPlaybackId {
+	g.GWActor.CommandsChannel <- CommandResetPlaybackId{
 		ClientId: *clientId,
 	}
 }
 
 func (g *gatewaySvc) SetTerminating(clientId *string) {
-	g.GWActor.CommandsChannel <- CommandSetIsTerminating {
+	g.GWActor.CommandsChannel <- CommandSetIsTerminating{
 		ClientId: *clientId,
 	}
 }
 
 func (g *gatewaySvc) GetTerminating(clientId *string) bool {
 	c := make(chan bool)
-	g.GWActor.CommandsChannel <- CommandGetIsTerminating {
+	g.GWActor.CommandsChannel <- CommandGetIsTerminating{
 		ClientId: *clientId,
 		Responder: c,
 	}
@@ -74,7 +74,7 @@ func (g *gatewaySvc) GetTerminating(clientId *string) bool {
 }
 
 func (g *gatewaySvc) SetDoSTT(clientId *string, doSTT bool) {
-	g.GWActor.CommandsChannel <- CommandSetDoSTT {
+	g.GWActor.CommandsChannel <- CommandSetDoSTT{
 		ClientId: *clientId,
 		DoSTT: doSTT,
 	}
@@ -82,7 +82,7 @@ func (g *gatewaySvc) SetDoSTT(clientId *string, doSTT bool) {
 
 func (g *gatewaySvc) GetDoSTT(clientId *string) bool {
 	c := make(chan bool)
-	g.GWActor.CommandsChannel <- CommandGetDoSTT {
+	g.GWActor.CommandsChannel <- CommandGetDoSTT{
 		ClientId: *clientId,
 		Responder: c,
 	}
@@ -91,7 +91,7 @@ func (g *gatewaySvc) GetDoSTT(clientId *string) bool {
 
 func (g *gatewaySvc) GetBotIdLang(clientId *string) (string, string) {
 	c := make(chan BotIdLang)
-	g.GWActor.CommandsChannel <- CommandGetBotIdLang {
+	g.GWActor.CommandsChannel <- CommandGetBotIdLang{
 		ClientId: *clientId,
 		Responder: c,
 	}
@@ -100,7 +100,7 @@ func (g *gatewaySvc) GetBotIdLang(clientId *string) (string, string) {
 }
 
 func (g *gatewaySvc) AddDtmf(clientId *string, dtmf string) {
-	g.GWActor.CommandsChannel <- CommandAddDtmf {
+	g.GWActor.CommandsChannel <- CommandAddDtmf{
 		ClientId: *clientId,
 		Dtmf: dtmf,
 	}
@@ -108,7 +108,7 @@ func (g *gatewaySvc) AddDtmf(clientId *string, dtmf string) {
 
 func (g *gatewaySvc) GetDtmf(clientId *string) string {
 	c := make(chan string)
-	g.GWActor.CommandsChannel <- CommandGetDtmf {
+	g.GWActor.CommandsChannel <- CommandGetDtmf{
 		ClientId: *clientId,
 		Responder: c,
 	}
@@ -116,7 +116,7 @@ func (g *gatewaySvc) GetDtmf(clientId *string) string {
 }
 
 func (g *gatewaySvc) ResetDtmf(clientId *string) {
-	g.GWActor.CommandsChannel <- CommandResetDtmf {
+	g.GWActor.CommandsChannel <- CommandResetDtmf{
 		ClientId: *clientId,
 	}
 }

@@ -1,164 +1,68 @@
 package nlp
 
-// https://yourbasic.org/golang/iota/
-// https://stackoverflow.com/questions/27236827/idiomatic-way-to-make-a-request-response-communication-using-channels
-
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/va-voice-gateway/appconfig"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"time"
+	"github.com/va-voice-gateway/gateway/config"
 )
 
-const DURATION_23_HOURS = 23 * 60 * 60
-
-type VapToken struct {
-	AccessToken string `json:"accessToken"`
-	Authentication VapTokenAuthentication
-	User VapTokenUser
+type VAP struct {
+	NewConv bool
+	VapAccessToken string
+	ClientId string
+	BotId string
+	Lang string
+	InviteParams string
 }
 
-type VapTokenAuthentication struct {
-	strategy string
+type NLPRequestText struct {
+	Text string
 }
 
-type VapTokenUser struct {
-	AccessToken string `json:"accessToken"`
-	Email string `json:"email"`
-	Description string `json:"description"`
-	AllowedServices []string `json:"allowedServices"`
+type NLPRequestEvent struct {
+	EventName string
+	EventParams interface{}
 }
 
-type VapTokenCacheEntry struct {
-	CurrentToken VapToken
-	CreatedTime time.Time
+// since go does not support enums with embedded structs
+// we model it like two pointers (since go does not support optional types as well:) )
+// one of the pointers will be set the other nil. they cannot be set both!
+type NLPRequest struct {
+	Text  *NLPRequestText
+	Event *NLPRequestEvent
 }
 
-type VapTokenCache struct {
-	SvcAccUsr string
-	SvcAccPwd string
-	VapBaseUrl string
-	Token *VapTokenCacheEntry
+type NLPResponse struct {
+	Text string
+	IsEOC bool
 }
 
-func NewVapTokenCache(SvcAccUsr string, SvcAccPwd string, VapBaseUrl string) VapTokenCache {
-	return VapTokenCache {
-		SvcAccUsr: SvcAccUsr,
-		SvcAccPwd: SvcAccPwd,
-		VapBaseUrl: VapBaseUrl,
-		Token: nil,
-	}
-}
+func NewVAP(ClientId string, BotId string, Lang string, InviteParams map[string]string) (*VAP, error) {
 
-func (c *VapTokenCache) GetNewToken() (*VapToken, error) {
-	reqBody := fmt.Sprintf(`
-		{
-    		"strategy": "local",
-    		"email": "%s",
-    		"password": "%s"
-    	}
-	`, c.SvcAccUsr, c.SvcAccPwd)
-	log.Println("GetNewToken.reqBody ",reqBody)
-
-	url := fmt.Sprintf("%s%s", c.VapBaseUrl, "/vapapi/authentication/v1")
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(reqBody)))
-	defer resp.Body.Close()
-
+	jsonStringInviteParams, err := json.Marshal(InviteParams)
 	if err != nil {
-		log.Printf("GetNewToken: error when calling  /vapapi/authentication/v1: %v\n", err)
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("GetNewToken: error when reading http response: %v\n", err)
-		return nil, err
-	}
-
-	vapToken := &VapToken{}
-	err = json.Unmarshal(body, vapToken)
-	if err != nil {
-		log.Printf("GetNewToken: error when parsing json: %v\n", err)
-		return nil, err
-	}
-
-	return vapToken, nil
-}
-
-func (c *VapTokenCache) GetToken() (*string, error) {
-
-	if c.Token == nil {
-		token, err := c.GetNewToken()
-		if err != nil {
-			log.Printf("GetToken: error when calling GetNewToken: %v\n", err)
-			return nil, err
-		}
-		c.Token = &VapTokenCacheEntry {
-			CurrentToken: *token,
-			CreatedTime: time.Now(),
-		}
-		return &c.Token.CurrentToken.AccessToken, nil
+	botConfigs := config.BotConfigs()
+	botConfig := botConfigs.GetBotConfig(&BotId)
+	if botConfig != nil {
+		return &VAP {
+			NewConv: true,
+			VapAccessToken: botConfig.Channels.Webchat.AccessToken,
+			ClientId:  ClientId,
+			BotId: BotId,
+			Lang:  Lang,
+			InviteParams: string(jsonStringInviteParams),
+		}, nil
 	} else {
-		token := c.Token
-		if IsExpired(time.Now(), token.CreatedTime, DURATION_23_HOURS) {
-			token, err := c.GetNewToken()
-			if err != nil {
-				log.Printf("GetToken: error when calling GetNewToken: %v\n", err)
-				return nil, err
-			}
-			c.Token = &VapTokenCacheEntry {
-				CurrentToken: *token,
-				CreatedTime: time.Now(),
-			}
-			return &c.Token.CurrentToken.AccessToken, nil
-		} else {
-			return &c.Token.CurrentToken.AccessToken, nil
-		}
-	}
-
-}
-
-func IsExpired(Now time.Time, CreatedTime time.Time, AllowedTokenAge int64) bool {
-	if Now.Unix() - CreatedTime.Unix() < 0 {
-		// token creation specified in the future? -> return true (expired)
-		return true
-	}
-	return Now.Unix() - CreatedTime.Unix() > AllowedTokenAge
-}
-
-type VapTokenRequest struct {
-	Responder chan string
-}
-
-type VapActor struct {
-	CommandsChannel chan VapTokenRequest
-	VapTokenCache VapTokenCache
-}
-func NewVapActor() VapActor {
-
-	SvcAccUsr := appconfig.AppConfig(nil).NlpVap.Username
-	SvcAccPwd := appconfig.AppConfig(nil).NlpVap.Password
-	VapBaseUrl := appconfig.AppConfig(nil).NlpVap.VapBaseUrl
-
-	cache :=NewVapTokenCache(SvcAccUsr, SvcAccPwd, VapBaseUrl)
-	chnl := make(chan VapTokenRequest)
-	return VapActor {
-		CommandsChannel: chnl,
-		VapTokenCache: cache,
+		return nil, fmt.Errorf("NewVAP: bot config not found for %s", BotId)
 	}
 }
 
-func (va *VapActor) VapActorProcessingLoop() {
-	for command := range va.CommandsChannel {
-		token, err:= va.VapTokenCache.GetToken()
-		if err != nil {
-			log.Printf("VapTokenRequest processing error %v\n", err)
-		} else {
-			command.Responder <- *token
-		}
-	}
+func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
+	// token := utils.GetVapAPIToken()
+
+	return nil, nil
 }
+

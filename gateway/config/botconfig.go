@@ -3,11 +3,11 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/va-voice-gateway/actors"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
-	"github.com/va-voice-gateway/nlp"
 )
 
 var (
@@ -66,6 +66,11 @@ type BotConfig struct {
 
 type BotConfigChannels struct {
 	VoiceGW BotConfigChannelsVoiceGW `json:"voicegw"`
+	Webchat BotConfigChannelsWebchat `json:"webchat"`
+}
+
+type BotConfigChannelsWebchat struct {
+	AccessToken string `json:"accessToken"`
 }
 
 type BotConfigChannelsVoiceGW struct {
@@ -197,9 +202,10 @@ func getBotConfigs() ([]BotConfig, error) {
 	return botConfigs, nil
 }
 
-func getBotConfigsFromVap(va *nlp.VapActor) ([]BotConfig, error) {
+func getBotConfigsFromVap() ([]BotConfig, error) {
+	va := actors.VapActor()
 	c := make(chan string)
-	request := nlp.VapTokenRequest {Responder: c}
+	request := actors.VapTokenRequest{Responder: c}
 	va.CommandsChannel <- request
 	token := <- c
 
@@ -232,10 +238,10 @@ func getBotConfigsFromVap(va *nlp.VapActor) ([]BotConfig, error) {
 	return botConfigs, nil
 }
 
-func BotConfigs(va *nlp.VapActor) *botConfigs {
+func BotConfigs() *botConfigs {
 	once.Do(func() {
 		//configs, err := nlp.getBotConfigs()
-		configs, err := getBotConfigsFromVap(va)
+		configs, err := getBotConfigsFromVap()
 		if err != nil {
 			fmt.Println("Error when loading bot configs")
 			log.Fatal(err)

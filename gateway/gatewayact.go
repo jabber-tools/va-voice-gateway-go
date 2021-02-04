@@ -1,5 +1,9 @@
 package gateway
 
+// in order to prevent cyclical dependencies gateway actor
+// is defined in gateway package and
+// not in actors package as remaining actors
+
 import (
 	"log"
 	"sync"
@@ -79,14 +83,14 @@ type CommandResetDtmf struct {
 
 type gatewayActor struct {
 	CommandsChannel chan interface{}
-	Gateway Gateway
+	Gateway         Gateway
 }
 
 func GatewayActor() *gatewayActor {
 	once.Do(func() {
-		instance = &gatewayActor {
+		instance = &gatewayActor{
 			CommandsChannel: make(chan interface{}),
-			Gateway: newGateway(),
+			Gateway:         newGateway(),
 		}
 	})
 	return instance
@@ -127,7 +131,7 @@ func (gwa *gatewayActor) GatewayActorProcessingLoop() {
 				break
 			case CommandGetBotIdLang:
 				botId, lang := gwa.Gateway.ClientGetBotIdLang(&v.ClientId)
-				v.Responder <- BotIdLang {
+				v.Responder <- BotIdLang{
 					BotId: *botId,
 					Lang: *lang,
 				}

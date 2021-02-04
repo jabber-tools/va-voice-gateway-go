@@ -4,9 +4,9 @@ import (
 	speech "cloud.google.com/go/speech/apiv1"
 	"context"
 	"fmt"
+	"github.com/va-voice-gateway/actors"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
-	"github.com/va-voice-gateway/stt"
 	"github.com/va-voice-gateway/utils"
 	"google.golang.org/api/option"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
@@ -190,7 +190,7 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 	ctx := context.Background()
 	_ = appconfig.AppConfig(nil) // not needed for now
 
-	botConfigs := config.BotConfigs(nil)
+	botConfigs := config.BotConfigs()
 
 	credStr, err := utils.StructToJsonString(botConfigs.GetSTTGoogleCred(botId))
 	if err != nil {
@@ -240,7 +240,7 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 			}
 			if err != nil {
 				// log.Printf("Cannot stream results: %v\n", err)
-				stt.STTResultsActor().CommandsChannel <- stt.CommandErrorResult{
+				actors.STTResultsActor().CommandsChannel <- actors.CommandErrorResult{
 					ChannelId: *channelId,
 					Error: err,
 				}
@@ -251,19 +251,19 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 					log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
 				}
 				// log.Printf("Could not recognize: %v\n", err)
-				stt.STTResultsActor().CommandsChannel <- stt.CommandErrorResult{
+				actors.STTResultsActor().CommandsChannel <- actors.CommandErrorResult{
 					ChannelId: *channelId,
 					Error: fmt.Errorf("Could not recognize: %v\n", err),
 				}
 			}
 			for _, result := range resp.Results {
 				if result.IsFinal == true {
-					stt.STTResultsActor().CommandsChannel <- stt.CommandFinalResult {
+					actors.STTResultsActor().CommandsChannel <- actors.CommandFinalResult{
 						ChannelId: *channelId,
 						Text: result.Alternatives[0].Transcript,
 					}
 				} else {
-					stt.STTResultsActor().CommandsChannel <- stt.CommandPartialResult {
+					actors.STTResultsActor().CommandsChannel <- actors.CommandPartialResult{
 						ChannelId: *channelId,
 						Text: result.Alternatives[0].Transcript,
 					}

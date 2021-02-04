@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/va-voice-gateway/actors"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/gateway/config"
-	"github.com/va-voice-gateway/nlp"
-	"github.com/va-voice-gateway/stt"
 	"log"
 	"net/http"
 	"os"
@@ -27,7 +26,7 @@ func main() {
 	appconfig.AppConfig(&appConfigPath)
 	fmt.Println("Voice Gateway config loaded")
 
-	vapActor := nlp.NewVapActor()
+	vapActor := actors.VapActor()
 	go vapActor.VapActorProcessingLoop()
 
 	// TBD: passing vapActor here is kind of ugly
@@ -35,13 +34,13 @@ func main() {
 	// different way considering token will expire only once per day
 	// mutex or rather rw lock should do fine here (same issue with rust version)
 	// load bot configs and caches it for global use
-	config.BotConfigs(&vapActor)
+	config.BotConfigs()
 	fmt.Println("Voice GW enabled Bot configs loaded")
 
 	gatewayActor := gateway.GatewayActor()
 	go gatewayActor.GatewayActorProcessingLoop()
 
-	sttActor := stt.STTResultsActor()
+	sttActor := actors.STTResultsActor()
 	go sttActor.STTResultsActorProcessingLoop()
 
 	ctx, cancel := context.WithCancel(context.Background())
