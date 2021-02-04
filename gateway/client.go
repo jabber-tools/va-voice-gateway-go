@@ -1,7 +1,9 @@
 package gateway
 
+import "github.com/va-voice-gateway/nlp"
+
 // TBD: rust version contains other attributes
-// we probably do not need them in Go solution
+// add them on the fly as needed
 type Client struct {
 	ClientId     string
 	PlaybackId   *string
@@ -11,6 +13,7 @@ type Client struct {
 	BotId        string
 	Lang         string
 	InviteParams map[string]string
+	NLP 	     nlp.VAP
 }
 
 func NewClient(clientId string, botId string, lang string, inviteParams map[string]string) Client {

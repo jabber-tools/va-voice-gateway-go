@@ -1,13 +1,16 @@
 package nlp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/utils"
+	"io/ioutil"
 	"log"
 	"github.com/google/uuid"
+	"net/http"
 )
 
 type VAP struct {
@@ -69,7 +72,7 @@ func NewVAP(ClientId string, BotId string, Lang string, InviteParams map[string]
 func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 	var payload string
 	token := utils.GetVapAPIToken()
-	appConfig := appconfig.AppConfig()
+	appConfig := appconfig.AppConfig(nil)
 
 	if request.Text != nil /* text nlp request */ {
 		if v.NewConv == true /* new conv */ {
@@ -140,8 +143,24 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 	log.Printf("payload %s\n", payload)
 	log.Printf("token %s\n", token)
 
-	url := fmt.Sprintf("%s%s", appConfig.NlpVap.VapBaseUrl, "/vapapi/authentication/v1")
-	log.Printf("url %s\n", url)
+	url := fmt.Sprintf("%s%s", appConfig.NlpVap.VapBaseUrl, "/vapapi/channels/voicegw/v1")
+
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(payload)))
+	defer resp.Body.Close()
+
+	if err != nil {
+		log.Printf("InvokeNLP: error when calling  /vapapi/channels/voicegw/v1: %v\n", err)
+		return nil, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("InvokeNLP: error when reading http response: %v\n", err)
+		return nil, err
+	}
+
+	log.Printf("body %s\n", body)
 
 	return nil, nil
 }
