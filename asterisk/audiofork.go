@@ -13,7 +13,7 @@ var upgrader = websocket.Upgrader{} // use default options
 
 // see https://tutorialedge.net/golang/go-websocket-tutorial/
 func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string, botId *string, lang *string) {
-	log.Printf("AudioForkHandler called for channel %v\n", *channelId)
+	log.Printf("AudioForkHandler called for channel: %v botId: %v lang: %v\n", *channelId, *botId, *lang)
 
 	botConfigs := config.BotConfigs(nil)
 

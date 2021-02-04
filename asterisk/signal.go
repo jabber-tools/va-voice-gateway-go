@@ -6,6 +6,8 @@ import (
 	"github.com/CyCoreSystems/ari/v5"
 	"github.com/CyCoreSystems/ari/v5/client/native"
 	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/nlp"
 	"log"
 )
 
@@ -46,13 +48,30 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 	subStasisEnd := cl.Bus().Subscribe(nil, "StasisEnd")
 	subChannelDtmfReceived := cl.Bus().Subscribe(nil, "ChannelDtmfReceived")
 
+	gw := gateway.GatewayService()
+
 	fmt.Println("listenAsteriskEvents: entering loop")
 	for {
 		select {
 		case e := <-subStasisStart.Events():
 			v := e.(*ari.StasisStart)
 			fmt.Println("Got StasisStart", "channel", v.Channel.ID)
-			_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+
+			go func() {
+				clientId := v.Channel.ID
+				botId := v.Args[0]
+				lang := v.Args[1]
+
+				// TBD: load asterisk invite params
+				inviteParams := make(map[string]string)
+				nlpImpl, _ := nlp.NewVAP(clientId, botId,lang, inviteParams)
+				newClient := gateway.NewClient(clientId, botId, lang,inviteParams, nlpImpl)
+				gw.AddClient(newClient)
+
+				// TBD: answer call
+				// TBD: nlp_tts_play (Welcome)
+			}()
+
 		case e := <-subStasisEnd.Events():
 			v := e.(*ari.StasisEnd)
 			fmt.Println("Got StasisEnd", "channel", v.Channel.ID)

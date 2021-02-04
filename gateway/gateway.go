@@ -103,7 +103,7 @@ func (g *Gateway) ClientGetDtmf(clientId *string) *string {
 // no need to clone in golang
 func (g *Gateway) ClientGetNLP(clientId *string) *nlp.VAP {
 	if client, ok := g.Clients[clientId]; ok {
-		return &client.NLP
+		return client.NLP
 	} else {
 		return nil
 	}

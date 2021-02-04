@@ -13,10 +13,11 @@ type Client struct {
 	BotId        string
 	Lang         string
 	InviteParams map[string]string
-	NLP 	     nlp.VAP
+	NLP 	     *nlp.VAP
 }
 
-func NewClient(clientId string, botId string, lang string, inviteParams map[string]string) Client {
+// TBD: inviteParams,nlpImpl if they are not pointer are they implicitly cloned when passed in?
+func NewClient(clientId string, botId string, lang string, inviteParams map[string]string, nlpImpl *nlp.VAP) Client {
 	return Client{
 		ClientId:     clientId,
 		PlaybackId:   nil,
@@ -26,5 +27,6 @@ func NewClient(clientId string, botId string, lang string, inviteParams map[stri
 		BotId:        botId,
 		Lang:         lang,
 		InviteParams: inviteParams,
+		NLP:		  nlpImpl,
 	}
 }
