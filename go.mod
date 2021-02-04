@@ -7,6 +7,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CyCoreSystems/ari/v5 v5.1.2
 	github.com/Microsoft/cognitive-services-speech-sdk-go v1.14.0
+	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/stretchr/testify v1.7.0
