@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/utils"
 	"io/ioutil"
 	"log"
-	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -68,7 +68,7 @@ type VAPCanonicalResponse struct {
 
 type VAPResponse struct {
 	CanonicalResponse VAPCanonicalResponse `json:"canonicalResponse"`
-	VoiceGWResponse string `json:"voice_gw_response"`
+	VoiceGWResponse string `json:"voiceGwResponse"`
 }
 
 func NewVAP(ClientId string, BotId string, Lang string, InviteParams map[string]string) (*VAP, error) {
@@ -109,12 +109,12 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 				},
 				"body": {
 					"text": "%s",
-					"convId": "%s",
+					"convId": "%s"
 				},
 				"vaContext": {
 					"lang": "%s",
 					"voicegw": {
-						inviteParams: "%s"
+						"inviteParams": %s
 					}			
 				}
 			}`, v.VapAccessToken, request.Text.Text, v.ConvId, v.Lang, v.InviteParams)
@@ -126,7 +126,7 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 				},
 				"body": {
 					"text": "%s",
-					"convId": "%s",
+					"convId": "%s"
 				}
 			}`, v.VapAccessToken, request.Text.Text, v.ConvId)
 		}
@@ -141,12 +141,12 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 					"event": {
  						"name": "%s"
 					},
-					"convId": "%s",
+					"convId": "%s"
 				},
 				"vaContext": {
 					"lang": "%s",
 					"voicegw": {
-						inviteParams: "%s"
+						"inviteParams": %s
 					}			
 				}
 			}`, v.VapAccessToken, request.Event.Name, v.ConvId, v.Lang, v.InviteParams)
@@ -160,7 +160,7 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 					"event": {
  						"name": "%s"
 					},
-					"convId": "%s",
+					"convId": "%s"
 				}
 			}`, v.VapAccessToken, request.Event.Name, v.ConvId)
 		}
@@ -172,7 +172,12 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 	url := fmt.Sprintf("%s%s", appConfig.NlpVap.VapBaseUrl, "/vapapi/channels/voicegw/v1")
 
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(payload)))
+	client := &http.Client{}
+	vapToken := utils.GetVapAPIToken()
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(payload)))
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", *vapToken)
+	resp, err := client.Do(req)
 	defer resp.Body.Close()
 
 	if err != nil {
@@ -186,12 +191,17 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 		return nil, err
 	}
 
+	log.Printf("InvokeNLP: raw response: %v\n", string(body))
+
 	vapResponse := &VAPResponse{}
 	err = json.Unmarshal(body, vapResponse)
 	if err != nil {
 		log.Printf("InvokeNLP: error when parsing json: %v\n", err)
 		return nil, err
 	}
+
+	vapResponseStr,_ := utils.StructToJsonString(vapResponse)
+	log.Printf("InvokeNLP: response parsed: %s\n", *vapResponseStr)
 
 	var IsEOC bool
 	if vapResponse.CanonicalResponse.DfResponse != nil &&

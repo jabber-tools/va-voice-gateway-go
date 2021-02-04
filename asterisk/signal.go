@@ -64,6 +64,7 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 
 				// TBD: load asterisk invite params
 				inviteParams := make(map[string]string)
+				inviteParams["foo"] = "bar"
 				nlpImpl, _ := nlp.NewVAP(clientId, botId,lang, inviteParams)
 				newClient := gateway.NewClient(clientId, botId, lang,inviteParams, nlpImpl)
 				gw.AddClient(newClient)
