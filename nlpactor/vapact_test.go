@@ -1,4 +1,4 @@
-package nlpactors
+package nlpactor
 
 import (
 	"github.com/stretchr/testify/assert"

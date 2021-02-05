@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/va-voice-gateway/sttactors"
-	"github.com/va-voice-gateway/nlpactors"
+	"github.com/va-voice-gateway/sttactor"
+	"github.com/va-voice-gateway/nlpactor"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
 	"github.com/va-voice-gateway/asteriskclient"
@@ -29,7 +29,7 @@ func main() {
 	appconfig.AppConfig(&appConfigPath)
 	fmt.Println("Voice Gateway config loaded")
 
-	vapActor := nlpactors.VapActor()
+	vapActor := nlpactor.VapActor()
 	go vapActor.VapActorProcessingLoop()
 
 	vapToken := utils.GetVapAPIToken()
@@ -40,7 +40,7 @@ func main() {
 	gatewayActor := gateway.GatewayActor()
 	go gatewayActor.GatewayActorProcessingLoop()
 
-	sttActor := sttactors.STTResultsActor()
+	sttActor := sttactor.STTResultsActor()
 	go sttActor.STTResultsActorProcessingLoop()
 
 	ctx, cancel := context.WithCancel(context.Background())

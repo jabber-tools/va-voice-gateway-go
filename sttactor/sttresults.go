@@ -1,4 +1,4 @@
-package sttactors
+package sttactor
 
 import (
 	"fmt"

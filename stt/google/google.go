@@ -4,7 +4,7 @@ import (
 	speech "cloud.google.com/go/speech/apiv1"
 	"context"
 	"fmt"
-	"github.com/va-voice-gateway/sttactors"
+	"github.com/va-voice-gateway/sttactor"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/utils"
@@ -240,7 +240,7 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 			}
 			if err != nil {
 				// log.Printf("Cannot stream results: %v\n", err)
-				sttactors.STTResultsActor().CommandsChannel <- sttactors.CommandErrorResult{
+				sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandErrorResult{
 					ChannelId: *channelId,
 					Error: err,
 				}
@@ -251,19 +251,19 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 					log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
 				}
 				// log.Printf("Could not recognize: %v\n", err)
-				sttactors.STTResultsActor().CommandsChannel <- sttactors.CommandErrorResult{
+				sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandErrorResult{
 					ChannelId: *channelId,
 					Error: fmt.Errorf("Could not recognize: %v\n", err),
 				}
 			}
 			for _, result := range resp.Results {
 				if result.IsFinal == true {
-					sttactors.STTResultsActor().CommandsChannel <- sttactors.CommandFinalResult{
+					sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandFinalResult{
 						ChannelId: *channelId,
 						Text: result.Alternatives[0].Transcript,
 					}
 				} else {
-					sttactors.STTResultsActor().CommandsChannel <- sttactors.CommandPartialResult{
+					sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandPartialResult{
 						ChannelId: *channelId,
 						Text: result.Alternatives[0].Transcript,
 					}

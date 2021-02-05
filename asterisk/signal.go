@@ -50,48 +50,55 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 	subStasisEnd := cl.Bus().Subscribe(nil, "StasisEnd")
 	subChannelDtmfReceived := cl.Bus().Subscribe(nil, "ChannelDtmfReceived")
 
-	gw := gateway.GatewayService()
-
 	fmt.Println("listenAsteriskEvents: entering loop")
 	for {
 		select {
-		case e := <-subStasisStart.Events():
-			v := e.(*ari.StasisStart)
-			fmt.Println("Got StasisStart", "channel", v.Channel.ID)
-
-			go func() {
-				clientId := v.Channel.ID
-				botId := v.Args[0]
-				lang := v.Args[1]
-
-				channel := cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
-
-				// TBD: load asterisk invite params
-				inviteParams := make(map[string]string)
-				inviteParams["foo"] = "bar"
-				nlpImpl, _ := nlp.NewVAP(clientId, botId,lang, inviteParams)
-				newClient := gateway.NewClient(clientId, botId, lang,inviteParams, nlpImpl)
-				gw.AddClient(newClient)
-
-				// TBD: answer call
-				// TBD: nlp_tts_play (Welcome)
-				channel.Answer()
-			}()
-
-		case e := <-subStasisEnd.Events():
-			v := e.(*ari.StasisEnd)
-			fmt.Println("Got StasisEnd", "channel", v.Channel.ID)
-			_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
-		case e := <-subChannelDtmfReceived.Events():
-			v := e.(*ari.ChannelDtmfReceived)
-			fmt.Println("Got ChannelDtmfReceived", "channel", v.Channel.ID)
-			fmt.Println("Digit", v.Digit)
-			_ = cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
-		case <-ctx.Done():
-			fmt.Println("listenAsteriskEvents: leaving the loop")
-			cl.Close() // disconnect from asterisk signal stream ws conn
-			return
+			case e := <-subStasisStart.Events():
+				event := e.(*ari.StasisStart)
+				go handlerStasisStart(event, cl)
+			case e := <-subStasisEnd.Events():
+				event := e.(*ari.StasisEnd)
+				go handlerStasisEnd(event, cl)
+			case e := <-subChannelDtmfReceived.Events():
+				event := e.(*ari.ChannelDtmfReceived)
+				go handlerChannelDtmfReceived(event, cl)
+			case <-ctx.Done():
+				fmt.Println("listenAsteriskEvents: leaving the loop")
+				cl.Close() // disconnect from asterisk signal stream ws conn
+				return
 		}
 	}
 	fmt.Println("listenAsteriskEvents: loop left!")
+}
+
+func handlerStasisStart(event *ari.StasisStart, cl ari.Client) {
+	fmt.Println("Got StasisStart", "channel", event.Channel.ID)
+
+	gw := gateway.GatewayService()
+
+	clientId := event.Channel.ID
+	botId := event.Args[0]
+	lang := event.Args[1]
+
+	channel := cl.Channel().Get(event.Key(ari.ChannelKey, event.Channel.ID))
+
+	// TBD: load asterisk invite params
+	inviteParams := make(map[string]string)
+	inviteParams["foo"] = "bar"
+	nlpImpl, _ := nlp.NewVAP(clientId, botId,lang, inviteParams)
+	newClient := gateway.NewClient(clientId, botId, lang,inviteParams, nlpImpl)
+	gw.AddClient(newClient)
+
+	// TBD: answer call
+	// TBD: nlp_tts_play (Welcome)
+	channel.Answer()
+}
+
+func handlerStasisEnd(event *ari.StasisEnd, cl ari.Client) {
+	fmt.Println("Got StasisEnd", "channel", event.Channel.ID)
+}
+
+func handlerChannelDtmfReceived(event *ari.ChannelDtmfReceived, cl ari.Client) {
+	fmt.Println("Got ChannelDtmfReceived", "channel", event.Channel.ID)
+	fmt.Println("Digit", event.Digit)
 }
