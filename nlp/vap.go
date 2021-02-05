@@ -166,8 +166,8 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 		}
 	}
 
-	log.Printf("payload %s\n", payload)
-	log.Printf("token %s\n", token)
+	// log.Printf("payload %s\n", payload)
+	// log.Printf("token %s\n", *token)
 
 	url := fmt.Sprintf("%s%s", appConfig.NlpVap.VapBaseUrl, "/vapapi/channels/voicegw/v1")
 

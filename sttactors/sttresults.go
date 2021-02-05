@@ -3,6 +3,7 @@ package sttactors
 import (
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
+	"github.com/va-voice-gateway/tts"
 	"log"
 	"sync"
 )
@@ -89,5 +90,25 @@ func (sttra *sttResultsActor) finalResult(cmdFinalResult CommandFinalResult) {
 // the challenge here are import cycles
 func Nlp_tts_play(clientId *string, botId *string, language * string, nlpRequest nlp.NLPRequest) {
 	gw := gateway.GatewayService()
-	gw.CallNLP(clientId, nlpRequest)
+
+	// TBD: should CallNLP & InvokeTTS  be called as go routines ?
+
+	nlpRes, err := gw.CallNLP(clientId, nlpRequest)
+	if err != nil {
+		log.Printf("Nlp_tts_play error(CallNLP) %s\n", err)
+		return
+	}
+
+	ttsRes, err := tts.InvokeTTS(tts.TTSReq{
+		BotId: *botId,
+		Text: nlpRes.Text,
+		Lang: *language,
+	})
+	if err != nil {
+		log.Printf("Nlp_tts_play error(InvokeTTS) %s\n", err)
+		return
+	}
+
+	log.Println("File to play " + ttsRes.FileName)
+
 }
