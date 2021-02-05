@@ -1,6 +1,10 @@
 package sttactors
 
 import (
+	"fmt"
+	"github.com/CyCoreSystems/ari/v5"
+	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/asteriskclient"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
 	"github.com/va-voice-gateway/tts"
@@ -88,7 +92,8 @@ func (sttra *sttResultsActor) finalResult(cmdFinalResult CommandFinalResult) {
 
 // TBD: this will have to be probably public so that we can use from different places
 // the challenge here are import cycles
-func Nlp_tts_play(clientId *string, botId *string, language * string, nlpRequest nlp.NLPRequest) {
+func Nlp_tts_play(clientId *string, botId *string, language *string, nlpRequest nlp.NLPRequest) {
+	appConfig := appconfig.AppConfig(nil)
 	gw := gateway.GatewayService()
 
 	// TBD: should CallNLP & InvokeTTS  be called as go routines ?
@@ -110,5 +115,18 @@ func Nlp_tts_play(clientId *string, botId *string, language * string, nlpRequest
 	}
 
 	log.Println("File to play " + ttsRes.FileName)
+
+	aric := *asteriskclient.AriClient
+	channelId := ari.NewKey(ari.ChannelKey, *clientId)
+	playbackID := ""
+	mediaURI := fmt.Sprintf("sound:%s%s", appConfig.Tts.TtsBaseUrlAsterisk,ttsRes.FileName)
+	playbackHandle, err := aric.Channel().Play(channelId, playbackID, mediaURI)
+
+	if err != nil {
+		log.Printf("Nlp_tts_play error(Play) %s\n", err)
+		return
+	}
+
+	log.Println("playback ", playbackHandle.ID())
 
 }

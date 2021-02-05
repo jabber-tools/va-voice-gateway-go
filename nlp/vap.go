@@ -97,7 +97,6 @@ func NewVAP(ClientId string, BotId string, Lang string, InviteParams map[string]
 
 func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 	var payload string
-	token := utils.GetVapAPIToken()
 	appConfig := appconfig.AppConfig(nil)
 
 	if request.Text != nil /* text nlp request */ {

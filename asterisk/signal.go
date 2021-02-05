@@ -11,7 +11,7 @@ import (
 	"log"
 )
 
-func Connect(ctx context.Context) {
+func Connect(ctx context.Context) *ari.Client {
 
 	fmt.Println("Connecting to Asterisk ARI")
 
@@ -26,7 +26,7 @@ func Connect(ctx context.Context) {
 	})
 	if err != nil {
 		log.Fatal("Failed to build native ARI client", "error", err)
-		return
+		return nil
 	}
 
 	fmt.Println("Connected")
@@ -34,13 +34,15 @@ func Connect(ctx context.Context) {
 	info, err := cl.Asterisk().Info(nil)
 	if err != nil {
 		log.Fatal("Failed to get Asterisk Info", "error", err)
-		return
+		return nil
 	}
 
 	fmt.Println("Asterisk Info", "info", info)
 
 	fmt.Println("Starting listenAsteriskEvents")
 	go listenAsteriskEvents(ctx, cl)
+
+	return &cl
 }
 
 func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
@@ -62,6 +64,8 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 				botId := v.Args[0]
 				lang := v.Args[1]
 
+				channel := cl.Channel().Get(v.Key(ari.ChannelKey, v.Channel.ID))
+
 				// TBD: load asterisk invite params
 				inviteParams := make(map[string]string)
 				inviteParams["foo"] = "bar"
@@ -71,6 +75,7 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 
 				// TBD: answer call
 				// TBD: nlp_tts_play (Welcome)
+				channel.Answer()
 			}()
 
 		case e := <-subStasisEnd.Events():

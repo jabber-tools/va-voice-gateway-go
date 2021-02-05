@@ -8,6 +8,7 @@ import (
 	"github.com/va-voice-gateway/nlpactors"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/asterisk"
+	"github.com/va-voice-gateway/asteriskclient"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/utils"
@@ -55,7 +56,7 @@ func main() {
 		done <- true
 	}()
 
-	asterisk.Connect(ctx)
+	asteriskclient.AriClient = asterisk.Connect(ctx)
 	fmt.Println("Asterisk signal stream connected!")
 	go runhttp()
 	<-done
