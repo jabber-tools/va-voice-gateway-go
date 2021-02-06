@@ -1,23 +1,22 @@
 package gateway
 
 import (
-	"fmt"
 	"github.com/va-voice-gateway/nlp"
 	"strings"
 )
 
 type Gateway struct {
-	Clients map[string]Client
+	Clients map[string]*Client
 }
 
 func newGateway() Gateway {
 	return Gateway{
-		Clients: make(map[string]Client),
+		Clients: make(map[string]*Client),
 	}
 }
 
 func (g *Gateway) AddClient(client Client) {
-	g.Clients[client.ClientId] = client
+	g.Clients[client.ClientId] = &client
 }
 
 func (g *Gateway) RemoveClient(clientId string) {
@@ -80,13 +79,9 @@ func (g *Gateway) ClientGetBotIdLang(clientId *string) (*string, *string) {
 	}
 }
 
-// TBD: how to get reference instead of copy?
-// https://stackoverflow.com/questions/20224478/dereferencing-a-map-index-in-golang
 func (g *Gateway) ClientAddDtmf(clientId *string, val string) {
 	if client, ok := g.Clients[*clientId]; ok {
 		client.Dtmf = append(client.Dtmf, val)
-		g.Clients[*clientId] = client // seems like client is just copy (workaround for now)
-		fmt.Printf(client.Lang)
 	}
 }
 
