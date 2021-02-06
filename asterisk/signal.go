@@ -6,6 +6,7 @@ import (
 	"github.com/CyCoreSystems/ari/v5"
 	"github.com/CyCoreSystems/ari/v5/client/native"
 	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/asteriskclient"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
 	"log"
@@ -109,7 +110,13 @@ func handlerStasisStart(event *ari.StasisStart, cl ari.Client) {
 	gw.AddClient(newClient)
 
 	channel.Answer()
-	// TBD: nlp_tts_play (Welcome)
+
+	go asteriskclient.Nlp_tts_play(&clientId, &botId, &lang, nlp.NLPRequest{
+		Text: nil,
+		Event: &nlp.NLPRequestEvent{
+			Name: "Welcome",
+		},
+	})
 }
 
 func handlerStasisEnd(event *ari.StasisEnd, cl ari.Client) {
