@@ -9,6 +9,7 @@ import (
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
 	"log"
+	"strings"
 )
 
 func Connect(ctx context.Context) *ari.Client {
@@ -82,16 +83,33 @@ func handlerStasisStart(event *ari.StasisStart, cl ari.Client) {
 
 	channel := cl.Channel().Get(event.Key(ari.ChannelKey, event.Channel.ID))
 
-	// TBD: load asterisk invite params
 	inviteParams := make(map[string]string)
-	inviteParams["foo"] = "bar"
+	// does not work
+	//varVARS, err := cl.Asterisk().Variables().Get(ari.NewKey(ari.VariableKey, "VARS"))
+	varVARS, err := channel.GetVariable("VARS")
+	if err != nil {
+		log.Printf("error when loading asterisk variables")
+	} else {
+		log.Printf("asterisk variables " + varVARS)
+		splits := strings.Split(varVARS, ",")
+		for _, varXname := range splits {
+			log.Printf("Loading asterisk variable " + varXname)
+			varXval, err := channel.GetVariable(varXname)
+			if err != nil {
+				log.Printf("Error when loading asterisk variable " + varXname)
+				continue
+			} else {
+				inviteParams[varXname] = varXval
+			}
+		}
+	}
+
 	nlpImpl, _ := nlp.NewVAP(clientId, botId,lang, inviteParams)
 	newClient := gateway.NewClient(clientId, botId, lang,inviteParams, nlpImpl)
 	gw.AddClient(newClient)
 
-	// TBD: answer call
-	// TBD: nlp_tts_play (Welcome)
 	channel.Answer()
+	// TBD: nlp_tts_play (Welcome)
 }
 
 func handlerStasisEnd(event *ari.StasisEnd, cl ari.Client) {
