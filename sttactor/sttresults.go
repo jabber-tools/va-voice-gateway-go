@@ -8,6 +8,7 @@ import (
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
 	"github.com/va-voice-gateway/tts"
+	"github.com/va-voice-gateway/utils"
 	"log"
 	"sync"
 )
@@ -81,9 +82,11 @@ func (sttra *sttResultsActor) finalResult(cmdFinalResult CommandFinalResult) {
 	gw := gateway.GatewayService()
 	botId, lang := gw.GetBotIdLang(&cmdFinalResult.ChannelId)
 	if botId != nil && lang != nil {
+		normalizedText := utils.RemoveNonAlphaNumericChars(utils.NormalizeAWB(cmdFinalResult.Text))
+		log.Printf("Normalized text %s\n", normalizedText)
 		Nlp_tts_play(&cmdFinalResult.ChannelId, botId, lang, nlp.NLPRequest{
 			Text: &nlp.NLPRequestText {
-				Text: cmdFinalResult.Text,
+				Text: normalizedText,
 			},
 			Event: nil,
 		})
