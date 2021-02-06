@@ -9,8 +9,13 @@ import (
 	"github.com/va-voice-gateway/asteriskclient"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
+	"github.com/va-voice-gateway/utils"
 	"log"
 	"strings"
+)
+
+var (
+	DIGITS = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
 )
 
 func Connect(ctx context.Context) *ari.Client {
@@ -120,10 +125,33 @@ func handlerStasisStart(event *ari.StasisStart, cl ari.Client) {
 }
 
 func handlerStasisEnd(event *ari.StasisEnd, cl ari.Client) {
-	fmt.Println("Got StasisEnd", "channel", event.Channel.ID)
+	log.Println("Got StasisEnd", "channel", event.Channel.ID)
 }
 
 func handlerChannelDtmfReceived(event *ari.ChannelDtmfReceived, cl ari.Client) {
-	fmt.Println("Got ChannelDtmfReceived", "channel", event.Channel.ID)
-	fmt.Println("Digit", event.Digit)
+	log.Println("Got ChannelDtmfReceived", "channel", event.Channel.ID, "Digit", event.Digit)
+
+	gw := gateway.GatewayService()
+	clientId := event.Channel.ID
+
+	if event.Digit == "#" {
+		dtmf := gw.GetDtmf(&clientId)
+		log.Println("final dtmf ", dtmf)
+		gw.ResetDtmf(&clientId)
+
+		botId, lang := gw.GetBotIdLang(&clientId)
+		if botId!=nil && lang != nil {
+			go asteriskclient.Nlp_tts_play(&clientId, botId, lang, nlp.NLPRequest{
+				Text: &nlp.NLPRequestText{
+					Text: dtmf,
+				},
+				Event: nil,
+			})
+		}
+	} else {
+		if utils.Contains(DIGITS, event.Digit) {
+			gw.AddDtmf(&clientId, event.Digit)
+			log.Println("Adding dtmf ",  event.Digit, event.Channel.ID)
+		}
+	}
 }

@@ -97,3 +97,12 @@ func NormalizeAWB(text string) string {
 func RemoveNonAlphaNumericChars(text string) string {
 	return string(RE_NON_ALPHANUMERIC_CHARS.ReplaceAll([]byte(text), []byte("")))
 }
+
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

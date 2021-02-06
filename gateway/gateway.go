@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"github.com/va-voice-gateway/nlp"
 	"strings"
 )
@@ -79,9 +80,13 @@ func (g *Gateway) ClientGetBotIdLang(clientId *string) (*string, *string) {
 	}
 }
 
+// TBD: how to get reference instead of copy?
+// https://stackoverflow.com/questions/20224478/dereferencing-a-map-index-in-golang
 func (g *Gateway) ClientAddDtmf(clientId *string, val string) {
 	if client, ok := g.Clients[*clientId]; ok {
 		client.Dtmf = append(client.Dtmf, val)
+		g.Clients[*clientId] = client // seems like client is just copy (workaround for now)
+		fmt.Printf(client.Lang)
 	}
 }
 
