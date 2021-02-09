@@ -221,6 +221,7 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 
 	go func() {
 		for audioBytes := range audioStream {
+			// TBD: skip writing if client's DoSTT flag is set to false!
 			if err := stream.Send(&speechpb.StreamingRecognizeRequest{
 				StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
 					AudioContent: audioBytes,

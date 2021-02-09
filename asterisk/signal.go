@@ -12,6 +12,7 @@ import (
 	"github.com/va-voice-gateway/utils"
 	"log"
 	"strings"
+	"time"
 )
 
 var (
@@ -149,7 +150,10 @@ func handlerStasisStart(event *ari.StasisStart, cl ari.Client) {
 }
 
 func handlerStasisEnd(event *ari.StasisEnd, cl ari.Client) {
-	log.Println("Got StasisEnd", "channel", event.Channel.ID)
+	clientId := event.Channel.ID
+	log.Println("Got StasisEnd", "channel", clientId)
+	gw := gateway.GatewayService()
+	gw.RemoveClient(clientId)
 }
 
 func handlerChannelDtmfReceived(event *ari.ChannelDtmfReceived, cl ari.Client) {
@@ -181,15 +185,48 @@ func handlerChannelDtmfReceived(event *ari.ChannelDtmfReceived, cl ari.Client) {
 }
 
 func handlerChannelHangupRequest(event *ari.ChannelHangupRequest, cl ari.Client) {
-	log.Println("Got ChannelHangupRequest", "channel", event.Channel.ID)
+	clientId := event.Channel.ID
+	log.Println("Got ChannelHangupRequest", "channel", clientId)
+	gw := gateway.GatewayService()
+	gw.SetTerminating(&clientId)
 }
 
 func handlerChannelTalkingStarted(event *ari.ChannelTalkingStarted, cl ari.Client) {
-	log.Println("Got ChannelTalkingStarted", "channel", event.Channel.ID)
+	clientId := event.Channel.ID
+	log.Println("Got ChannelTalkingStarted", "channel", clientId)
+	gw := gateway.GatewayService()
+	gw.SetDoSTT(&clientId, true)
+	talkingRestartedChan := gw.GetTalkingRestarted(&clientId)
+	if talkingRestartedChan != nil {
+		*talkingRestartedChan <- 1
+	}
 }
 
 func handlerChannelTalkingFinished(event *ari.ChannelTalkingFinished, cl ari.Client) {
-	log.Println("Got ChannelTalkingFinished", "channel", event.Channel.ID)
+	clientId := event.Channel.ID
+	log.Println("Got ChannelTalkingFinished", "channel", clientId)
+	gw := gateway.GatewayService()
+	gw.SetDoSTT(&clientId, false)
+
+	talkginRestartedChan := make(chan int)
+	gw.SetTalkingRestarted(&clientId, &talkginRestartedChan)
+
+	select {
+		case <-time.After(time.Second * 58):
+			if gw.GetTerminating(&clientId) {
+				// client already probably hangup manually in the meantime
+				// hanging up would return channel not found from asterisk
+				log.Printf("Client already hangup %s\n", clientId)
+			} else {
+				log.Printf("Talking finished timeout -> hanging up %s\n", clientId)
+				ariChannel := cl.Channel().Get(event.Key(ari.ChannelKey, clientId))
+				ariChannel.Hangup()
+			}
+			break
+		case <- talkginRestartedChan:
+			log.Printf("User talking again -> not hanging up %s\n", clientId)
+			break
+	}
 }
 
 func handlerChannelDestroyed(event *ari.ChannelDestroyed, cl ari.Client) {

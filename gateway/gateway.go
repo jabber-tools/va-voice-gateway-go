@@ -71,6 +71,20 @@ func (g *Gateway) ClientGetDoSTT(clientId *string) bool {
 	}
 }
 
+func (g *Gateway) ClientSetTalkingRestarted(clientId *string, talkingRestartedChan *chan int) {
+	if client, ok := g.Clients[*clientId]; ok {
+		client.TalkingRestarted = talkingRestartedChan
+	}
+}
+
+func (g *Gateway) ClientGetTalkingRestarted(clientId *string) *chan int {
+	if client, ok := g.Clients[*clientId]; ok {
+		return client.TalkingRestarted
+	} else {
+		return nil
+	}
+}
+
 func (g *Gateway) ClientGetBotIdLang(clientId *string) (*string, *string) {
 	if client, ok := g.Clients[*clientId]; ok {
 		return &client.BotId, &client.Lang

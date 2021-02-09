@@ -87,6 +87,16 @@ type CommandCallNLP struct {
 	Responder chan nlp.NLPResponseResult
 }
 
+type CommandGetTalkingRestarted struct {
+	ClientId string
+	Responder chan *chan int
+}
+
+type CommandSetTalkingRestarted struct {
+	ClientId string
+	TalkingRestartedChan *chan int
+}
+
 type gatewayActor struct {
 	CommandsChannel chan interface{}
 	Gateway         Gateway
@@ -152,7 +162,6 @@ func (gwa *gatewayActor) GatewayActorProcessingLoop() {
 			case CommandResetDtmf:
 				gwa.Gateway.ClientResetDtmf(&v.ClientId)
 				break
-
 			case CommandCallNLP:
 				go func() {
 					clientNLP := gwa.Gateway.ClientGetNLP(&v.ClientId)
@@ -172,8 +181,13 @@ func (gwa *gatewayActor) GatewayActorProcessingLoop() {
 					}
 				}()
 				break
-
-
+			case CommandGetTalkingRestarted:
+				channelTalkingRestarted := gwa.Gateway.ClientGetTalkingRestarted(&v.ClientId)
+				v.Responder <- channelTalkingRestarted
+				break
+			case CommandSetTalkingRestarted:
+				gwa.Gateway.ClientSetTalkingRestarted(&v.ClientId, v.TalkingRestartedChan)
+				break
 			default:
 				log.Printf("GatewayActorProcessingLoop.Unknown type, ignoring  %v\n", v)
 		}

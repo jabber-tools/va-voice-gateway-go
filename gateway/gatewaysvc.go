@@ -136,3 +136,19 @@ func (g *gatewaySvc) CallNLP(clientId *string, nlpRequest nlp.NLPRequest) (*nlp.
 		return nil, result.Error
 	}
 }
+
+func (g *gatewaySvc) SetTalkingRestarted(clientId *string, talkingRestartedChan *chan int) {
+	g.GWActor.CommandsChannel <- CommandSetTalkingRestarted{
+		ClientId: *clientId,
+		TalkingRestartedChan: talkingRestartedChan,
+	}
+}
+
+func (g *gatewaySvc) GetTalkingRestarted(clientId *string) *chan int {
+	c := make(chan *chan int)
+	g.GWActor.CommandsChannel <- CommandGetTalkingRestarted{
+		ClientId: *clientId,
+		Responder: c,
+	}
+	return <- c
+}
