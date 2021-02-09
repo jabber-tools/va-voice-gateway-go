@@ -56,6 +56,12 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 	subStasisStart := cl.Bus().Subscribe(nil, "StasisStart")
 	subStasisEnd := cl.Bus().Subscribe(nil, "StasisEnd")
 	subChannelDtmfReceived := cl.Bus().Subscribe(nil, "ChannelDtmfReceived")
+	subChannelHangupRequest := cl.Bus().Subscribe(nil, "ChannelHangupRequest")
+	subChannelTalkingStarted := cl.Bus().Subscribe(nil, "ChannelTalkingStarted")
+	subChannelTalkingFinished := cl.Bus().Subscribe(nil, "ChannelTalkingFinished")
+	subChannelDestroyed := cl.Bus().Subscribe(nil, "ChannelDestroyed")
+	subPlaybackFinished := cl.Bus().Subscribe(nil, "PlaybackFinished")
+	subPlaybackStarted	 := cl.Bus().Subscribe(nil, "PlaybackStarted")
 
 	fmt.Println("listenAsteriskEvents: entering loop")
 	for {
@@ -69,6 +75,24 @@ func listenAsteriskEvents(ctx context.Context, cl ari.Client) {
 			case e := <-subChannelDtmfReceived.Events():
 				event := e.(*ari.ChannelDtmfReceived)
 				go handlerChannelDtmfReceived(event, cl)
+			case e := <-subChannelHangupRequest.Events():
+				event := e.(*ari.ChannelHangupRequest)
+				go handlerChannelHangupRequest(event, cl)
+			case e := <-subChannelTalkingStarted.Events():
+				event := e.(*ari.ChannelTalkingStarted)
+				go handlerChannelTalkingStarted(event, cl)
+			case e := <-subChannelTalkingFinished.Events():
+				event := e.(*ari.ChannelTalkingFinished)
+				go handlerChannelTalkingFinished(event, cl)
+			case e := <-subChannelDestroyed.Events():
+				event := e.(*ari.ChannelDestroyed)
+				go handlerChannelDestroyed(event, cl)
+			case e := <-subPlaybackFinished.Events():
+				event := e.(*ari.PlaybackFinished)
+				go handlerPlaybackFinished(event, cl)
+			case e := <-subPlaybackStarted.Events():
+				event := e.(*ari.PlaybackStarted)
+				go handlerPlaybackStarted(event, cl)
 			case <-ctx.Done():
 				fmt.Println("listenAsteriskEvents: leaving the loop")
 				cl.Close() // disconnect from asterisk signal stream ws conn
@@ -154,4 +178,28 @@ func handlerChannelDtmfReceived(event *ari.ChannelDtmfReceived, cl ari.Client) {
 			log.Println("Adding dtmf ",  event.Digit, event.Channel.ID)
 		}
 	}
+}
+
+func handlerChannelHangupRequest(event *ari.ChannelHangupRequest, cl ari.Client) {
+	log.Println("Got ChannelHangupRequest", "channel", event.Channel.ID)
+}
+
+func handlerChannelTalkingStarted(event *ari.ChannelTalkingStarted, cl ari.Client) {
+	log.Println("Got ChannelTalkingStarted", "channel", event.Channel.ID)
+}
+
+func handlerChannelTalkingFinished(event *ari.ChannelTalkingFinished, cl ari.Client) {
+	log.Println("Got ChannelTalkingFinished", "channel", event.Channel.ID)
+}
+
+func handlerChannelDestroyed(event *ari.ChannelDestroyed, cl ari.Client) {
+	log.Println("Got ChannelDestroyed", "channel", event.Channel.ID)
+}
+
+func handlerPlaybackFinished(event *ari.PlaybackFinished, cl ari.Client) {
+	log.Println("Got PlaybackFinished")
+}
+
+func handlerPlaybackStarted(event *ari.PlaybackStarted, cl ari.Client) {
+	log.Println("Got PlaybackStarted")
 }
