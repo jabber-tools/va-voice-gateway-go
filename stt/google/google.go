@@ -185,7 +185,7 @@ func IntoGrpc(rc *config.RecognitionConfig, lang *string) *speechpb.RecognitionC
 }
 
 // Google Speech To Text - https://cloud.google.com/speech-to-text/docs/streaming-recognize
-func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig, botId *string, channelId *string, lang *string) {
+func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig, botId *string, channelId *string, lang *string, signalToAudioFork *chan int) {
 	log.Printf("PerformGoogleSTT called for channel %v\n", *channelId)
 	ctx := context.Background()
 	_ = appconfig.AppConfig(nil) // not needed for now
@@ -220,7 +220,7 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 	}
 
 	go func() {
-		for audioBytes := range audioStream {
+		for audioBytes := range *audioStream {
 			// TBD: skip writing if client's DoSTT flag is set to false!
 			if err := stream.Send(&speechpb.StreamingRecognizeRequest{
 				StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
@@ -230,11 +230,35 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 				log.Printf("Could not send audio: %v", err)
 			}
 		}
+		log.Printf("PerformGoogleSTT go loop #1 left: %v", *channelId)
 	}()
 
 	go func(channelId *string) {
 		for {
 			resp, err := stream.Recv()
+			// log.Printf(">>>resp %v\n", resp)
+			// log.Printf(">>>err %v\n", err)
+			/*
+			2021/02/09 21:28:23 Got StasisEnd channel 1612902439.8
+			2021/02/09 21:28:33 >>>resp error:{code:11  message:"Audio Timeout Error: Long duration elapsed without audio. Audio should be sent close to real time."}
+			2021/02/09 21:28:33 >>>err <nil>
+			2021/02/09 21:28:33 WARNING: Speech recognition request exceeded limit of 60 seconds.
+			2021/02/09 21:28:33 STTResultsActorProcessingLoop.CommandErrorResult  {1612902439.8 Could not recognize: code:11  message:"Audio Timeout Error: Long duration elapsed without audio. Audio should be sent close to real time."
+			}
+			2021/02/09 21:28:33 >>>resp <nil>
+			2021/02/09 21:28:33 >>>err rpc error: code = OutOfRange desc = Audio Timeout Error: Long duration elapsed without audio. Audio should be sent close to real time.
+			panic: runtime error: invalid memory address or nil pointer dereference
+			[signal 0xc0000005 code=0x0 addr=0x28 pc=0x916cee]
+
+			goroutine 41 [running]:
+			github.com/va-voice-gateway/stt/google.PerformGoogleSTT.func2(0xbc1b40, 0xc00049c630, 0xc0002fa740)
+				C:/Users/abezecny/GoLandProjects/va-voice-gateway-go/stt/google/google.go:273 +0x36e
+			created by github.com/va-voice-gateway/stt/google.PerformGoogleSTT
+				C:/Users/abezecny/GoLandProjects/va-voice-gateway-go/stt/google/google.go:235 +0x471
+
+			-> once we retrieve resp with err code 11 we need to terminate the loop, next call will never succeed
+			*/
+
 			if err == io.EOF {
 				log.Printf("StreamingRecognize EOF")
 				break
@@ -250,8 +274,17 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 				// Workaround while the API doesn't give a more informative error.
 				if err.Code == 3 || err.Code == 11 {
 					log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
+					sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandErrorResult{
+						ChannelId: *channelId,
+						Error: fmt.Errorf("%v\n", err),
+					}
+					log.Printf("sending signalToAudioFork = 1: %v", *channelId)
+					// see https://www.xspdf.com/resolution/53095585.html
+					// Go channels created with make(chan int) are not buffered
+					*signalToAudioFork <- 1 // value 1 indicates audiofork should spin up another PerformGoogleSTT go routine to recover
+					log.Printf("sent signalToAudioFork = 1: %v", *channelId)
+					break // no point to do next iteration we need to call PerformGoogleSTT again
 				}
-				// log.Printf("Could not recognize: %v\n", err)
 				sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandErrorResult{
 					ChannelId: *channelId,
 					Error: fmt.Errorf("Could not recognize: %v\n", err),
@@ -269,8 +302,8 @@ func PerformGoogleSTT(audioStream chan []byte, recCfg *config.RecognitionConfig,
 						Text: result.Alternatives[0].Transcript,
 					}
 				}
-				// fmt.Printf("Result: %+v\n", result)
 			}
+			log.Printf("PerformGoogleSTT go loop #2 left: %v", *channelId)
 		}
 	}(channelId)
 }
