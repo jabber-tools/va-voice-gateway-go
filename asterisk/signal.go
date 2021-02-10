@@ -208,8 +208,8 @@ func handlerChannelTalkingFinished(event *ari.ChannelTalkingFinished, cl ari.Cli
 	gw := gateway.GatewayService()
 	gw.SetDoSTT(&clientId, false)
 
-	talkginRestartedChan := make(chan int)
-	gw.SetTalkingRestarted(&clientId, &talkginRestartedChan)
+	talkingRestartedChan := make(chan int)
+	gw.SetTalkingRestarted(&clientId, &talkingRestartedChan)
 
 	select {
 		case <-time.After(time.Second * 58):
@@ -223,7 +223,7 @@ func handlerChannelTalkingFinished(event *ari.ChannelTalkingFinished, cl ari.Cli
 				ariChannel.Hangup()
 			}
 			break
-		case <- talkginRestartedChan:
+		case <- talkingRestartedChan:
 			log.Printf("User talking again -> not hanging up %s\n", clientId)
 			break
 	}
