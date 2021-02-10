@@ -24,8 +24,17 @@ func main() {
 
 	fmt.Println("Starting Voice Gateway...")
 
+	var appConfigPath string
+
+	if len(os.Args) > 1 && os.Args[1] != "" {
+		appConfigPath = os.Args[1]
+		log.Printf("using following app config file %s", appConfigPath)
+	} else {
+		appConfigPath = "c:/tmp/cfggo.toml"
+		log.Printf("using default app config file %s", appConfigPath)
+	}
+
 	// load app config and caches it for global use
-	appConfigPath := "c:/tmp/cfggo.toml"
 	appconfig.AppConfig(&appConfigPath)
 	fmt.Println("Voice Gateway config loaded")
 
@@ -35,7 +44,7 @@ func main() {
 	vapToken := utils.GetVapAPIToken()
 
 	config.BotConfigs(vapToken)
-	fmt.Println("Voice GW enabled Bot configs loaded")
+	log.Println("Voice GW enabled Bot configs loaded")
 
 	gatewayActor := gateway.GatewayActor()
 	go gatewayActor.GatewayActorProcessingLoop()
@@ -61,11 +70,11 @@ func main() {
 	go runhttp()
 	<-done
 	cancel()
-	fmt.Println("exiting!")
+	log.Println("exiting!")
 }
 
 func slashHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Got http request /")
+	log.Println("Got http request /")
 }
 
 func runhttp() {
@@ -78,7 +87,7 @@ func runhttp() {
 		asterisk.AudioForkHandler(w, r, &channelId, &botId, &lang)
 	})
 	r.HandleFunc("/", slashHandler)
-	fmt.Println("Listening for requests on port 8083")
+	log.Println("Listening for requests on port 8083")
 
 	appConfig := appconfig.AppConfig(nil)
 
