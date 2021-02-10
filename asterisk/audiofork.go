@@ -4,7 +4,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/stt/google"
-	"github.com/va-voice-gateway/utils"
 	"log"
 	"net/http"
 )
@@ -34,8 +33,8 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string,
 		return
 	}
 
-	log.Printf("AudioForkHandler: recognitionConfig: \n")
-	utils.PrettyPrint(recognitionConfig)
+	log.Printf("AudioForkHandler: recognitionConfig: %v", recognitionConfig)
+	// utils.PrettyPrint(recognitionConfig)
 
 	// TBD: call here either google or ms stt based on config
 	go google.PerformGoogleSTT(&audioStream, recognitionConfig, botId, channelId, lang, &signalToAudioFork)
@@ -64,7 +63,7 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string,
 					if msgSignal == 1 {
 						log.Printf("Recreating STT loop for %v\n", *channelId)
 						close(audioStream) // close the channel so that first go routine triggered by PerformGoogleSTT will end
-						audioStream := make(chan []byte) // recreate audio stream for newly fired PerformGoogleSTT
+						audioStream = make(chan []byte) // recreate audio stream for newly fired PerformGoogleSTT
 						go google.PerformGoogleSTT(&audioStream, recognitionConfig, botId, channelId, lang, &signalToAudioFork)
 						log.Printf("Recreated STT loop for %v\n", *channelId)
 					}

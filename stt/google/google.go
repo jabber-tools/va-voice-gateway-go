@@ -4,6 +4,7 @@ import (
 	speech "cloud.google.com/go/speech/apiv1"
 	"context"
 	"fmt"
+	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/sttactor"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
@@ -179,7 +180,7 @@ func IntoGrpc(rc *config.RecognitionConfig, lang *string) *speechpb.RecognitionC
 		UseEnhanced:                         rc.UseEnhanced,
 	}
 
-	utils.PrettyPrint(rcout)
+	// utils.PrettyPrint(rcout)
 
 	return &rcout
 }
@@ -220,14 +221,16 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 	}
 
 	go func() {
+		gw := gateway.GatewayService()
 		for audioBytes := range *audioStream {
-			// TBD: skip writing if client's DoSTT flag is set to false!
-			if err := stream.Send(&speechpb.StreamingRecognizeRequest{
-				StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
-					AudioContent: audioBytes,
-				},
-			}); err != nil {
-				log.Printf("Could not send audio: %v", err)
+			if gw.GetDoSTT(channelId) == true {
+				if err := stream.Send(&speechpb.StreamingRecognizeRequest{
+					StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
+						AudioContent: audioBytes,
+					},
+				}); err != nil {
+					log.Printf("Could not send audio: %v", err)
+				}
 			}
 		}
 		log.Printf("PerformGoogleSTT go loop #1 left: %v", *channelId)
@@ -279,8 +282,6 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 						Error: fmt.Errorf("%v\n", err),
 					}
 					log.Printf("sending signalToAudioFork = 1: %v", *channelId)
-					// see https://www.xspdf.com/resolution/53095585.html
-					// Go channels created with make(chan int) are not buffered
 					*signalToAudioFork <- 1 // value 1 indicates audiofork should spin up another PerformGoogleSTT go routine to recover
 					log.Printf("sent signalToAudioFork = 1: %v", *channelId)
 					break // no point to do next iteration we need to call PerformGoogleSTT again
@@ -303,7 +304,7 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 					}
 				}
 			}
-			log.Printf("PerformGoogleSTT go loop #2 left: %v", *channelId)
 		}
+		log.Printf("PerformGoogleSTT go loop #2 left: %v", *channelId)
 	}(channelId)
 }
