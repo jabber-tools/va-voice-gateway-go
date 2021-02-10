@@ -45,7 +45,8 @@ func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string,
 	for {
 		counter++
 		if counter > 200 {
-			log.Printf("Running Audiofork loop for %v\n", *channelId)
+			// for debugging & troubleshooting only
+			// log.Printf("Running Audiofork loop for %v\n", *channelId)
 			counter = 0
 		}
 		mt, p, err := conn.ReadMessage()

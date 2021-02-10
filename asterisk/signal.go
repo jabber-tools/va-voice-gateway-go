@@ -234,7 +234,17 @@ func handlerChannelDestroyed(event *ari.ChannelDestroyed, cl ari.Client) {
 }
 
 func handlerPlaybackFinished(event *ari.PlaybackFinished, cl ari.Client) {
+	// since we are not using asterisk bridges playback target_uri
+	// will be always something like channel:1607454635.2
+	clientId := event.Playback.TargetURI[8:]
 	log.Println("Got PlaybackFinished")
+	gw := gateway.GatewayService()
+	gw.ResetPlaybackId(&clientId)
+	if gw.GetTerminating(&clientId) == true {
+		log.Printf("playback_finished: client terminating based on termination flag %s", clientId)
+		ariChannel := cl.Channel().Get(event.Key(ari.ChannelKey, clientId))
+		ariChannel.Hangup()
+	}
 }
 
 func handlerPlaybackStarted(event *ari.PlaybackStarted, cl ari.Client) {

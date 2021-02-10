@@ -1,6 +1,7 @@
 package sttactor
 
 import (
+	"github.com/CyCoreSystems/ari/v5"
 	"github.com/va-voice-gateway/asteriskclient"
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
@@ -71,7 +72,14 @@ func (sttra *sttResultsActor) errorResult(cmdErrorResult CommandErrorResult) {
 }
 
 func (sttra *sttResultsActor) partialResult(cmdPartialResult CommandPartialResult) {
-	// TBD
+	channelId := cmdPartialResult.ChannelId
+	gw := gateway.GatewayService()
+	if playbackId := gw.GetPlaybackId(&channelId); playbackId != nil {
+		log.Printf("Stopping playback %s for %s", playbackId, channelId)
+		ariClient := *asteriskclient.AriClient
+		ariClient.Playback().Stop(ari.NewKey(ari.PlaybackKey, *playbackId))
+		gw.ResetPlaybackId(&channelId)
+	}
 }
 
 func (sttra *sttResultsActor) finalResult(cmdFinalResult CommandFinalResult) {

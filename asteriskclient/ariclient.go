@@ -51,6 +51,8 @@ func Nlp_tts_play(clientId *string, botId *string, language *string, nlpRequest 
 		return
 	}
 
-	log.Println("playback ", playbackHandle.ID())
+	playbackId := playbackHandle.ID()
+	gw.SetPlaybackId(clientId, &playbackId)
+	log.Println("playback ",playbackId)
 
 }
