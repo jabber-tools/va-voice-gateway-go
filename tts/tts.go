@@ -47,9 +47,8 @@ func InvokeTTS(ttsReq TTSReq) (*TTSRes, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		log.Printf("InvokeTTS: error when calling  /tts/google/v1(wrong status code): %s\n", resp.StatusCode)
-		return nil, err
-
+		log.Printf("InvokeTTS: error when calling  /tts/google/v1(wrong status code): %d", resp.StatusCode)
+		return nil, fmt.Errorf("InvokeTTS: error when calling  /tts/google/v1(wrong status code): %d", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
