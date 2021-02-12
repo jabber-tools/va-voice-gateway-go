@@ -1,16 +1,21 @@
 package appconfig
 
 import (
-	"fmt"
 	"github.com/BurntSushi/toml"
-	"log"
+	"github.com/sirupsen/logrus"
+	"github.com/va-voice-gateway/logger"
 	"sync"
 )
 
 var (
 	instance *appConfig
 	once sync.Once
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log)
+}
 
 type appConfig struct {
 	Tts      Tts
@@ -62,7 +67,7 @@ type Temp struct {
 }
 
 func loadAppConfig(appCfgPath string) (*appConfig, error) {
-	fmt.Println("loading app config...")
+	log.Info("loading app config...")
 
 	var config appConfig
 	if _, err := toml.DecodeFile(appCfgPath, &config); err != nil {
@@ -77,7 +82,7 @@ func AppConfig(appCfgPath *string) *appConfig {
 	once.Do(func() {
 		appConfig, err := loadAppConfig(*appCfgPath)
 		if err != nil {
-			fmt.Println("Error when loading app config")
+			log.Error("Error when loading app config")
 			log.Fatal(err)
 			return
 		}

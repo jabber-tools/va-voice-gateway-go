@@ -3,8 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/va-voice-gateway/nlpactor"
-	"log"
+	"github.com/va-voice-gateway/logger"
 	"regexp"
 	"strings"
 	"unicode"
@@ -18,15 +19,20 @@ var (
 	RE_NON_ALPHANUMERIC_CHARS = regexp.MustCompile(`(?i)[^0-9a-z\p{L}\s]`)
 	DIGIT_WORDS_REPLACEMENTS = []string{"1","2","3","4","5","6","7","8","9","0"}
 	DIGIT_WORDS = []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "zero"}
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log)
+}
 
 // pretty print of any structure via json marshaling with indentation
 func PrettyPrint(structure interface{}) {
 	b, err := json.MarshalIndent(structure, "", "  ")
 	if err == nil {
-		log.Println(string(b))
+		log.Debug(string(b))
 	} else {
-		log.Println("BotConfigPrettyPrint error: ", err)
+		log.Debug("BotConfigPrettyPrint error: ", err)
 	}
 }
 

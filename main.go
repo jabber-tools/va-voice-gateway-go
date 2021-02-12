@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/sttactor"
 	"github.com/va-voice-gateway/nlpactor"
 	"github.com/va-voice-gateway/appconfig"
@@ -12,7 +13,7 @@ import (
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/gateway/config"
 	"github.com/va-voice-gateway/utils"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,23 +21,29 @@ import (
 	"time"
 )
 
+var log = logrus.New()
+
+func init() {
+	logger.InitLogger(log)
+}
+
 func main() {
 
-	fmt.Println("Starting Voice Gateway...")
+	log.Info("Starting Voice Gateway...")
 
 	var appConfigPath string
 
 	if len(os.Args) > 1 && os.Args[1] != "" {
 		appConfigPath = os.Args[1]
-		log.Printf("using following app config file %s", appConfigPath)
+		log.Info("using following app config file ", appConfigPath)
 	} else {
 		appConfigPath = "c:/tmp/cfggo.toml"
-		log.Printf("using default app config file %s", appConfigPath)
+		log.Info("using default app config file ", appConfigPath)
 	}
 
 	// load app config and caches it for global use
 	appconfig.AppConfig(&appConfigPath)
-	fmt.Println("Voice Gateway config loaded")
+	log.Info("Voice Gateway config loaded")
 
 	vapActor := nlpactor.VapActor()
 	go vapActor.VapActorProcessingLoop()
@@ -44,7 +51,7 @@ func main() {
 	vapToken := utils.GetVapAPIToken()
 
 	config.BotConfigs(vapToken)
-	log.Println("Voice GW enabled Bot configs loaded")
+	log.Info("Voice GW enabled Bot configs loaded")
 
 	gatewayActor := gateway.GatewayActor()
 	go gatewayActor.GatewayActorProcessingLoop()
@@ -60,21 +67,21 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigs
-		fmt.Println()
-		fmt.Println(sig)
+		log.Info()
+		log.Info(sig)
 		done <- true
 	}()
 
 	asteriskclient.AriClient = asterisk.Connect(ctx)
-	fmt.Println("Asterisk signal stream connected!")
+	log.Info("Asterisk signal stream connected!")
 	go runhttp()
 	<-done
 	cancel()
-	log.Println("exiting!")
+	log.Info("exiting!")
 }
 
 func slashHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Got http request /")
+	log.Info("Got http request /")
 }
 
 func runhttp() {
@@ -87,7 +94,7 @@ func runhttp() {
 		asterisk.AudioForkHandler(w, r, &channelId, &botId, &lang)
 	})
 	r.HandleFunc("/", slashHandler)
-	log.Println("Listening for requests on port 8083")
+	log.Info("Listening for requests on port 8083")
 
 	appConfig := appconfig.AppConfig(nil)
 

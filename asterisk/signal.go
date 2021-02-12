@@ -21,7 +21,7 @@ var (
 
 func Connect(ctx context.Context) *ari.Client {
 
-	fmt.Println("Connecting to Asterisk ARI")
+	log.Println("Connecting to Asterisk ARI")
 
 	appConfig := appconfig.AppConfig(nil)
 
