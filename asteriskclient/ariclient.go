@@ -5,16 +5,22 @@ import (
 	"github.com/CyCoreSystems/ari/v5"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/nlp"
 	"github.com/va-voice-gateway/tts"
-	"log"
+	"github.com/sirupsen/logrus"
 	"regexp"
 )
 
 var (
 	AriClient *ari.Client
 	ReNewLineChar = regexp.MustCompile(`\n`)
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log, "asteriskclient")
+}
 
 // helper composite function to perform nlp, tts and asterisk play
 // put into asteriskclient package to prevent import cycle though ideally it should go to asterisk package
@@ -26,12 +32,12 @@ func Nlp_tts_play(clientId *string, botId *string, language *string, nlpRequest 
 
 	nlpRes, err := gw.CallNLP(clientId, nlpRequest)
 	if err != nil {
-		log.Printf("Nlp_tts_play error(CallNLP) %s\n", err)
+		log.Error("Nlp_tts_play error(CallNLP) %s\n", err)
 		return
 	}
 
 	escapedText := ReNewLineChar.ReplaceAllString(nlpRes.Text, "\\n")
-	log.Printf("Invoking TTS %s\n", escapedText)
+	log.Debug("Invoking TTS %s\n", escapedText)
 
 	ttsRes, err := tts.InvokeTTS(tts.TTSReq{
 		BotId: *botId,
@@ -39,11 +45,11 @@ func Nlp_tts_play(clientId *string, botId *string, language *string, nlpRequest 
 		Lang: *language,
 	})
 	if err != nil {
-		log.Printf("Nlp_tts_play error(InvokeTTS) %s\n", err)
+		log.Error("Nlp_tts_play error(InvokeTTS) %s\n", err)
 		return
 	}
 
-	log.Println("File to play " + ttsRes.FileName)
+	log.Info("File to play " + ttsRes.FileName)
 
 	aric := *AriClient
 	channelId := ari.NewKey(ari.ChannelKey, *clientId)
@@ -52,12 +58,11 @@ func Nlp_tts_play(clientId *string, botId *string, language *string, nlpRequest 
 	playbackHandle, err := aric.Channel().Play(channelId, playbackID, mediaURI)
 
 	if err != nil {
-		log.Printf("Nlp_tts_play error(Play) %s\n", err)
+		log.Error("Nlp_tts_play error(Play) %s\n", err)
 		return
 	}
 
 	playbackId := playbackHandle.ID()
 	gw.SetPlaybackId(clientId, &playbackId)
-	log.Println("playback ",playbackId)
-
+	log.Debug("playback ",playbackId)
 }

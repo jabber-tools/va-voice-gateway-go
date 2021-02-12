@@ -4,9 +4,10 @@ import (
 	"github.com/CyCoreSystems/ari/v5"
 	"github.com/va-voice-gateway/asteriskclient"
 	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/nlp"
 	"github.com/va-voice-gateway/utils"
-	"log"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -15,7 +16,12 @@ import (
 var (
 	_instance *sttResultsActor
 	_once sync.Once
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log, "sttactor")
+}
 
 type CommandErrorResult struct {
 	ChannelId string
@@ -50,19 +56,19 @@ func (sttra *sttResultsActor) STTResultsActorProcessingLoop() {
 	for command := range sttra.CommandsChannel {
 		switch v := command.(type) {
 			case CommandErrorResult:
-				log.Printf("STTResultsActorProcessingLoop.CommandErrorResult  %v\n", v)
+				log.Debugf("STTResultsActorProcessingLoop.CommandErrorResult  %v\n", v)
 				go sttra.errorResult(v)
 				break
 			case CommandPartialResult:
-				log.Printf("STTResultsActorProcessingLoop.CommandPartialResult  %v\n", v)
+				log.Debugf("STTResultsActorProcessingLoop.CommandPartialResult  %v\n", v)
 				go sttra.partialResult(v)
 				break
 			case CommandFinalResult:
-				log.Printf("STTResultsActorProcessingLoop.CommandFinalResult  %v\n", v)
+				log.Debugf("STTResultsActorProcessingLoop.CommandFinalResult  %v\n", v)
 				go sttra.finalResult(v)
 				break
 			default:
-				log.Printf("STTResultsActorProcessingLoop.Unknown type, ignoring  %v\n", v)
+				log.Debugf("STTResultsActorProcessingLoop.Unknown type, ignoring  %v\n", v)
 		}
 	}
 }
@@ -75,7 +81,7 @@ func (sttra *sttResultsActor) partialResult(cmdPartialResult CommandPartialResul
 	channelId := cmdPartialResult.ChannelId
 	gw := gateway.GatewayService()
 	if playbackId := gw.GetPlaybackId(&channelId); playbackId != nil {
-		log.Printf("Stopping playback %s for %s", playbackId, channelId)
+		log.Debugf("Stopping playback %s for %s", playbackId, channelId)
 		ariClient := *asteriskclient.AriClient
 		ariClient.Playback().Stop(ari.NewKey(ari.PlaybackKey, *playbackId))
 		gw.ResetPlaybackId(&channelId)
@@ -87,7 +93,7 @@ func (sttra *sttResultsActor) finalResult(cmdFinalResult CommandFinalResult) {
 	botId, lang := gw.GetBotIdLang(&cmdFinalResult.ChannelId)
 	if botId != nil && lang != nil {
 		normalizedText := utils.RemoveNonAlphaNumericChars(utils.NormalizeAWB(cmdFinalResult.Text))
-		log.Printf("Normalized text %s\n", normalizedText)
+		log.Debugf("Normalized text %s\n", normalizedText)
 		go asteriskclient.Nlp_tts_play(&cmdFinalResult.ChannelId, botId, lang, nlp.NLPRequest{
 			Text: &nlp.NLPRequestText {
 				Text: normalizedText,

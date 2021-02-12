@@ -1,5 +1,8 @@
 package logger
 
+// see https://pkg.go.dev/github.com/sirupsen/logrus#readme-logrus
+// https://github.com/Sirupsen/logrus
+
 import (
 	"encoding/json"
 	"fmt"
@@ -41,7 +44,8 @@ func (f *customLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return []byte(msg), nil
 }
 
-func InitLogger(logger *logrus.Logger) {
+func InitLogger(logger *logrus.Logger, PackageName string) {
 	logger.SetReportCaller(true)
 	logger.SetFormatter(new(customLogFormatter))
+	logger.SetLevel(logrus.TraceLevel) // for now hardcoded, must be taken from config by PackageName
 }

@@ -4,15 +4,21 @@ package gateway
 // is defined in gateway package
 
 import (
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/nlp"
-	"log"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
 var (
 	instance *gatewayActor
 	once sync.Once
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log, "gateway")
+}
 
 type CommandAddClient struct {
 	Client Client
@@ -189,7 +195,7 @@ func (gwa *gatewayActor) GatewayActorProcessingLoop() {
 				gwa.Gateway.ClientSetTalkingRestarted(&v.ClientId, v.TalkingRestartedChan)
 				break
 			default:
-				log.Printf("GatewayActorProcessingLoop.Unknown type, ignoring  %v\n", v)
+				log.Warn("GatewayActorProcessingLoop.Unknown type, ignoring  %v\n", v)
 		}
 	}
 }

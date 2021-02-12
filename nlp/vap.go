@@ -7,11 +7,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/utils"
 	"io/ioutil"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
+
+var log = logrus.New()
+
+func init() {
+	logger.InitLogger(log, "nlp")
+}
 
 type VAP struct {
 	NewConv bool
@@ -180,27 +187,27 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 	defer resp.Body.Close()
 
 	if err != nil {
-		log.Printf("InvokeNLP: error when calling  /vapapi/channels/voicegw/v1: %v\n", err)
+		log.Error("InvokeNLP: error when calling  /vapapi/channels/voicegw/v1: %v\n", err)
 		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("InvokeNLP: error when reading http response: %v\n", err)
+		log.Error("InvokeNLP: error when reading http response: %v\n", err)
 		return nil, err
 	}
 
-	log.Printf("InvokeNLP: raw response: %v\n", string(body))
+	log.Trace("InvokeNLP: raw response: %v\n", string(body))
 
 	vapResponse := &VAPResponse{}
 	err = json.Unmarshal(body, vapResponse)
 	if err != nil {
-		log.Printf("InvokeNLP: error when parsing json: %v\n", err)
+		log.Error("InvokeNLP: error when parsing json: %v\n", err)
 		return nil, err
 	}
 
 	vapResponseStr,_ := utils.StructToJsonString(vapResponse)
-	log.Printf("InvokeNLP: response parsed: %s\n", *vapResponseStr)
+	log.Debug("InvokeNLP: response parsed: %s\n", *vapResponseStr)
 
 	var IsEOC bool
 	if vapResponse.CanonicalResponse.DfResponse != nil &&

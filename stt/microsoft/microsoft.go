@@ -3,87 +3,87 @@
 package microsoft
 
 import (
-	"fmt"
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/audio"
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/common"
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/speech"
+	"google.golang.org/appengine/log"
 )
 
 func PerformMicrosoftSTT(audioStream chan []byte, botId *string, channelId *string, lang *string) {
 	audioFormat, err := audio.GetWaveFormatPCM(8000, 16, 1)
 	if err != nil {
-		fmt.Println("GetWaveFormatPCM error: ", err)
+		log.Error("GetWaveFormatPCM error: ", err)
 		return
 	}
 	defer audioFormat.Close()
 
 	stream, err := audio.CreatePushAudioInputStreamFromFormat(audioFormat)
 	if err != nil {
-		fmt.Println("CreatePushAudioInputStreamFromFormat error: ", err)
+		log.Error("CreatePushAudioInputStreamFromFormat error: ", err)
 		return
 	}
 	defer stream.Close()
 
 	audioConfig, err := audio.NewAudioConfigFromStreamInput(stream)
 	if err != nil {
-		fmt.Println("NewAudioConfigFromStreamInput error: ", err)
+		log.Error("NewAudioConfigFromStreamInput error: ", err)
 		return
 	}
 	defer audioConfig.Close()
 
 	speechConfig, err := speech.NewSpeechConfigFromSubscription(appConfig.Temp.SttMsSubKey, appConfig.Temp.SttMsRegion)
 	if err != nil {
-		fmt.Println("NewAudioConfigFromStreamInput error: ", err)
+		log.Error("NewAudioConfigFromStreamInput error: ", err)
 		return
 	}
 	defer speechConfig.Close()
 
 	speechRecognizer, err := speech.NewSpeechRecognizerFromConfig(speechConfig, audioConfig)
 	if err != nil {
-		fmt.Println("NewSpeechRecognizerFromConfig error: ", err)
+		log.Error("NewSpeechRecognizerFromConfig error: ", err)
 		return
 	}
 	defer speechRecognizer.Close()
 
 	sessionStartedHandler := func(event speech.SessionEventArgs) {
-		fmt.Println("sessionStartedHandler", event)
+		log.Debug("sessionStartedHandler", event)
 		defer event.Close()
 	}
 
 	sessionStoppedHandler := func(event speech.SessionEventArgs) {
-		fmt.Println("sessionStoppedHandler", event)
+		log.Debug("sessionStoppedHandler", event)
 		defer event.Close()
 	}
 
 	speechStartDetectedHandler := func(event speech.RecognitionEventArgs) {
-		fmt.Println("speechStartDetectedHandler", event)
+		log.Debug("speechStartDetectedHandler", event)
 		defer event.Close()
 	}
 
 	speechEndDetectedHandler := func(event speech.RecognitionEventArgs) {
-		fmt.Println("speechEndDetectedHandler", event)
+		log.Debug("speechEndDetectedHandler", event)
 		defer event.Close()
 	}
 
 	canceledHandler := func(event speech.SpeechRecognitionCanceledEventArgs) {
-		fmt.Println("canceledHandler", event)
+		log.Debug("canceledHandler", event)
 		defer event.Close()
 	}
 
 	recognizingHandler := func(event speech.SpeechRecognitionEventArgs) {
-		fmt.Println("recognizingHandler", event)
+		log.Debug("recognizingHandler", event)
 		defer event.Close()
-		fmt.Println("PARTIAL: ", event.Result.Text)
+		log.Debug("PARTIAL: ", event.Result.Text)
 	}
 
 	recognizedHandler := func(event speech.SpeechRecognitionEventArgs) {
-		fmt.Println("recognizedHandler", event)
+		log.Debug("recognizedHandler", event)
 		defer event.Close()
 		if event.Result.Reason == common.NoMatch {
-			fmt.Println("NoMatch")
+			log.Debug("NoMatch")
 		} else {
 			if event.Result.Text != "" {
-				fmt.Println("FULL: ", event.Result.Text)
+				log.Debug("FULL: ", event.Result.Text)
 			}
 		}
 	}
@@ -99,15 +99,15 @@ func PerformMicrosoftSTT(audioStream chan []byte, botId *string, channelId *stri
 	recogStartErrChan := speechRecognizer.StartContinuousRecognitionAsync()
 	go func() {
 		recogStartErr := <-recogStartErrChan
-		fmt.Println("StartContinuousRecognitionAsync error")
-		fmt.Println(recogStartErr)
+		log.Error("StartContinuousRecognitionAsync error")
+		log.Error(recogStartErr)
 		// TBD: we should probably leave AudioForkHandler here!
 	}()
 
 	go func() {
 		for audioBytes := range audioStream {
 			if err := stream.Write(audioBytes); err != nil {
-				log.Printf("Could not send audio: %v", err)
+				log.Errorf("Could not send audio: %v", err)
 			}
 		}
 	}()

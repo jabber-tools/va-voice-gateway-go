@@ -3,12 +3,20 @@ package asterisk
 import (
 	"github.com/gorilla/websocket"
 	"github.com/va-voice-gateway/gateway/config"
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/stt/google"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
-var upgrader = websocket.Upgrader{} // use default options
+var (
+	upgrader = websocket.Upgrader{} // use default options
+	log = logrus.New()
+)
+
+func init() {
+	logger.InitLogger(log, "asterisk")
+}
 
 // see https://tutorialedge.net/golang/go-websocket-tutorial/
 func AudioForkHandler(w http.ResponseWriter, r *http.Request, channelId *string, botId *string, lang *string) {

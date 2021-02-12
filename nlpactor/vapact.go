@@ -7,9 +7,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/logger"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -18,7 +19,12 @@ import (
 var (
 	instance *vapActor
 	once sync.Once
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log, "nlpactor")
+}
 
 const DURATION_23_HOURS = 23 * 60 * 60
 
@@ -68,7 +74,7 @@ func (c *VapTokenCache) GetNewToken() (*VapToken, error) {
     		"password": "%s"
     	}
 	`, c.SvcAccUsr, c.SvcAccPwd)
-	log.Println("GetNewToken.reqBody ",reqBody)
+	log.Trace("GetNewToken.reqBody ",reqBody)
 
 	url := fmt.Sprintf("%s%s", c.VapBaseUrl, "/vapapi/authentication/v1")
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer([]byte(reqBody)))

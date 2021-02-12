@@ -5,10 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/logger"
 	"io/ioutil"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
+
+var log = logrus.New()
+
+func init() {
+	logger.InitLogger(log, "tts")
+}
 
 type TTSReq struct {
 	BotId string `json:"bot_id"`
@@ -47,22 +54,22 @@ func InvokeTTS(ttsReq TTSReq) (*TTSRes, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		log.Printf("InvokeTTS: error when calling  /tts/google/v1(wrong status code): %d", resp.StatusCode)
+		log.Errorf("InvokeTTS: error when calling  /tts/google/v1(wrong status code): %d", resp.StatusCode)
 		return nil, fmt.Errorf("InvokeTTS: error when calling  /tts/google/v1(wrong status code): %d", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("InvokeTTS: error when reading http response: %v\n", err)
+		log.Errorf("InvokeTTS: error when reading http response: %v\n", err)
 		return nil, err
 	}
 
-	log.Printf("InvokeTTS: raw response: %v\n", string(body))
+	log.Debugf("InvokeTTS: raw response: %v\n", string(body))
 
 	ttsRes := &TTSRes{}
 	err = json.Unmarshal(body, ttsRes)
 	if err != nil {
-		log.Printf("InvokeTTS: error when parsing json: %v\n", err)
+		log.Errorf("InvokeTTS: error when parsing json: %v\n", err)
 		return nil, err
 	}
 

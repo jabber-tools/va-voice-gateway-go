@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/va-voice-gateway/gateway"
+	"github.com/va-voice-gateway/logger"
 	"github.com/va-voice-gateway/sttactor"
 	"github.com/va-voice-gateway/appconfig"
 	"github.com/va-voice-gateway/gateway/config"
@@ -12,8 +13,14 @@ import (
 	"google.golang.org/api/option"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 	"io"
-	"log"
+	"github.com/sirupsen/logrus"
 )
+
+var log = logrus.New()
+
+func init() {
+	logger.InitLogger(log, "main")
+}
 
 // truly quick & dirty, see rust based implementation for proper stuff
 func IntoGrpc(rc *config.RecognitionConfig, lang *string) *speechpb.RecognitionConfig {
@@ -187,7 +194,7 @@ func IntoGrpc(rc *config.RecognitionConfig, lang *string) *speechpb.RecognitionC
 
 // Google Speech To Text - https://cloud.google.com/speech-to-text/docs/streaming-recognize
 func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig, botId *string, channelId *string, lang *string, signalToAudioFork *chan int) {
-	log.Printf("PerformGoogleSTT called for channel %v\n", *channelId)
+	log.Infof("PerformGoogleSTT called for channel %v\n", *channelId)
 	ctx := context.Background()
 	_ = appconfig.AppConfig(nil) // not needed for now
 
@@ -195,17 +202,17 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 
 	credStr, err := utils.StructToJsonString(botConfigs.GetSTTGoogleCred(botId))
 	if err != nil {
-		log.Println("Unable to retrieve Google STT Credentials")
+		log.Error("Unable to retrieve Google STT Credentials")
 	}
 
 	credBytes := []byte(*credStr)
 	client, err := speech.NewClient(ctx, option.WithCredentialsJSON(credBytes))
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	stream, err := client.StreamingRecognize(ctx)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	// Send the initial configuration message.
 	if err := stream.Send(&speechpb.StreamingRecognizeRequest{
@@ -217,7 +224,7 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 			},
 		},
 	}); err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	go func() {
@@ -229,11 +236,11 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 						AudioContent: audioBytes,
 					},
 				}); err != nil {
-					log.Printf("Could not send audio: %v", err)
+					log.Errorf("Could not send audio: %v", err)
 				}
 			}
 		}
-		log.Printf("PerformGoogleSTT go loop #1 left: %v", *channelId)
+		log.Infof("PerformGoogleSTT go loop #1 left: %v", *channelId)
 	}()
 
 	go func(channelId *string) {
@@ -263,7 +270,7 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 			*/
 
 			if err == io.EOF {
-				log.Printf("StreamingRecognize EOF")
+				log.Info("StreamingRecognize EOF")
 				break
 			}
 			if err != nil {
@@ -276,14 +283,14 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 			if err := resp.Error; err != nil {
 				// Workaround while the API doesn't give a more informative error.
 				if err.Code == 3 || err.Code == 11 {
-					log.Print("WARNING: Speech recognition request exceeded limit of 60 seconds.")
+					log.Warn("WARNING: Speech recognition request exceeded limit of 60 seconds.")
 					sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandErrorResult{
 						ChannelId: *channelId,
 						Error: fmt.Errorf("%v\n", err),
 					}
-					log.Printf("sending signalToAudioFork = 1: %v", *channelId)
+					log.Debugf("sending signalToAudioFork = 1: %v", *channelId)
 					*signalToAudioFork <- 1 // value 1 indicates audiofork should spin up another PerformGoogleSTT go routine to recover
-					log.Printf("sent signalToAudioFork = 1: %v", *channelId)
+					log.Debugf("sent signalToAudioFork = 1: %v", *channelId)
 					break // no point to do next iteration we need to call PerformGoogleSTT again
 				}
 				sttactor.STTResultsActor().CommandsChannel <- sttactor.CommandErrorResult{
@@ -305,6 +312,6 @@ func PerformGoogleSTT(audioStream *chan []byte, recCfg *config.RecognitionConfig
 				}
 			}
 		}
-		log.Printf("PerformGoogleSTT go loop #2 left: %v", *channelId)
+		log.Infof("PerformGoogleSTT go loop #2 left: %v", *channelId)
 	}(channelId)
 }

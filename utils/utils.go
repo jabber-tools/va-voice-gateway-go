@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	logger.InitLogger(log)
+	logger.InitLogger(log, "utils")
 }
 
 // pretty print of any structure via json marshaling with indentation

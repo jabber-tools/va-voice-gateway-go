@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/va-voice-gateway/appconfig"
+	"github.com/va-voice-gateway/logger"
 	"io/ioutil"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
 )
@@ -13,7 +14,12 @@ import (
 var (
 	instance *botConfigs
 	once sync.Once
+	log = logrus.New()
 )
+
+func init() {
+	logger.InitLogger(log, "config")
+}
 
 // Structs below are used to parse REST based Google STT configuration which are used by VAP
 // These structs then needs to be transformed into respective GRPC based structs used by underlying Google APIs
@@ -186,7 +192,7 @@ func getBotConfigs() ([]BotConfig, error) {
 
 	content, err := ioutil.ReadFile("c:/tmp/botconfigs.json")
 	if err != nil {
-		log.Printf("GetBotConfigs ReadFile error: %v", err)
+		log.Error("GetBotConfigs ReadFile error: %v", err)
 		return nil, err
 	}
 
@@ -195,7 +201,7 @@ func getBotConfigs() ([]BotConfig, error) {
 	err = json.Unmarshal(data, &botConfigs)
 
 	if err != nil {
-		log.Printf("GetBotConfigs Unmarshal error: %v", err)
+		log.Error("GetBotConfigs Unmarshal error: %v", err)
 		return nil, err
 	}
 
@@ -214,20 +220,20 @@ func getBotConfigsFromVap(vapToken *string) ([]BotConfig, error) {
 	defer resp.Body.Close()
 
 	if err != nil {
-		log.Printf("GetBotConfigsFromVap: error when calling  /vapapi/vap-mgmt/config-mgmt/v1: %v\n", err)
+		log.Error("GetBotConfigsFromVap: error when calling  /vapapi/vap-mgmt/config-mgmt/v1: %v\n", err)
 		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("GetBotConfigsFromVap: error when reading http response: %v\n", err)
+		log.Error("GetBotConfigsFromVap: error when reading http response: %v\n", err)
 		return nil, err
 	}
 
 	botConfigs := make([]BotConfig, 0)
 	err = json.Unmarshal(body, &botConfigs)
 	if err != nil {
-		log.Printf("GetBotConfigsFromVap: error when parsing json: %v\n", err)
+		log.Error("GetBotConfigsFromVap: error when parsing json: %v\n", err)
 		return nil, err
 	}
 	return botConfigs, nil
@@ -238,7 +244,7 @@ func BotConfigs(vapToken *string) *botConfigs {
 		//configs, err := nlp.getBotConfigs()
 		configs, err := getBotConfigsFromVap(vapToken)
 		if err != nil {
-			fmt.Println("Error when loading bot configs")
+			log.Error("Error when loading bot configs")
 			log.Fatal(err)
 			return
 		}

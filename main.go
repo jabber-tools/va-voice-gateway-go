@@ -24,7 +24,7 @@ import (
 var log = logrus.New()
 
 func init() {
-	logger.InitLogger(log)
+	logger.InitLogger(log, "main")
 }
 
 func main() {

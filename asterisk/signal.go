@@ -10,7 +10,6 @@ import (
 	"github.com/va-voice-gateway/gateway"
 	"github.com/va-voice-gateway/nlp"
 	"github.com/va-voice-gateway/utils"
-	"log"
 	"strings"
 	"time"
 )

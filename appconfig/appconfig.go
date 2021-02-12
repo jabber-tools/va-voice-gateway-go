@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	logger.InitLogger(log)
+	logger.InitLogger(log, "appconfig")
 }
 
 type appConfig struct {
