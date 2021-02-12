@@ -24,13 +24,20 @@ func structToJsonString(structure interface{}) (*string, error) {
 type customLogFormatter struct {}
 
 func (f *customLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	Level, _ := entry.Level.MarshalText()
+	Level, err := entry.Level.MarshalText()
+	if err != nil {
+		return nil, err
+	}
 	LevelStr := fmt.Sprintf("[%s]", Level)
 
 	// TimeStr := entry.Time.Format("2006-01-02 15:04:05.999999999 -0700 MST")
 	TimeStr := fmt.Sprintf("[%s]", entry.Time.Format("2006-01-02 15:04:05.999 -0700 MST")) // ms precision is OK
 
-	ContextData, _ := structToJsonString(entry.Data)
+	ContextData, err := structToJsonString(entry.Data)
+
+	if err != nil {
+		return nil, err
+	}
 
 	ContextDataStr := ""
 	if *ContextData != "{}" {
