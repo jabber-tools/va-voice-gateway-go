@@ -23,9 +23,6 @@ port = 8083
 host = "0.0.0.0"
 channel_size = 10000
 
-[log]
-log_cfg = "/tmp/log4rs.yml"
-
 [temp]
 stt_ms_sub_key = "<<real subscription key here>>"
 stt_ms_region = "westeurope"

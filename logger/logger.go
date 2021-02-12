@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"os"
 	"strings"
 )
 
@@ -52,7 +53,37 @@ func (f *customLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func InitLogger(logger *logrus.Logger, PackageName string) {
+
+	packageLoggingLevel := os.Getenv(fmt.Sprintf("loglevel_%s", PackageName))
+
+	var  logLevel logrus.Level
+	switch packageLoggingLevel {
+		case "panic":
+			logLevel = logrus.PanicLevel
+			break
+		case "fatal":
+			logLevel = logrus.FatalLevel
+			break
+		case "error":
+			logLevel = logrus.ErrorLevel
+			break
+		case "warn":
+			logLevel = logrus.WarnLevel
+			break
+		case "info":
+			logLevel = logrus.InfoLevel
+			break
+		case "debug":
+			logLevel = logrus.DebugLevel
+			break
+		case "trace":
+			logLevel = logrus.TraceLevel
+			break
+		default:
+			logLevel = logrus.DebugLevel
+	}
+
 	logger.SetReportCaller(true)
 	logger.SetFormatter(new(customLogFormatter))
-	logger.SetLevel(logrus.TraceLevel) // for now hardcoded, must be taken from config by PackageName
+	logger.SetLevel(logLevel)
 }

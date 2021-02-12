@@ -2,20 +2,14 @@ package appconfig
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/sirupsen/logrus"
-	"github.com/va-voice-gateway/logger"
+	"log"
 	"sync"
 )
 
 var (
 	instance *appConfig
 	once sync.Once
-	log = logrus.New()
 )
-
-func init() {
-	logger.InitLogger(log, "appconfig")
-}
 
 type appConfig struct {
 	Tts      Tts
@@ -23,7 +17,6 @@ type appConfig struct {
 	NlpVap   NlpVap
 	Asterisk Asterisk
 	Core     Core
-	Log      Log
 	Temp     Temp
 }
 
@@ -57,17 +50,13 @@ type Core struct {
 	ChannelSize int    `toml:"channel_size"`
 }
 
-type Log struct {
-	LogCfg string `toml:"log_cfg"`
-}
-
 type Temp struct {
 	SttMsSubKey string `toml:"stt_ms_sub_key"`
 	SttMsRegion string `toml:"stt_ms_region"`
 }
 
 func loadAppConfig(appCfgPath string) (*appConfig, error) {
-	log.Info("loading app config...")
+	log.Println("loading app config...")
 
 	var config appConfig
 	if _, err := toml.DecodeFile(appCfgPath, &config); err != nil {
@@ -82,7 +71,7 @@ func AppConfig(appCfgPath *string) *appConfig {
 	once.Do(func() {
 		appConfig, err := loadAppConfig(*appCfgPath)
 		if err != nil {
-			log.Error("Error when loading app config")
+			log.Println("Error when loading app config")
 			log.Fatal(err)
 			return
 		}
