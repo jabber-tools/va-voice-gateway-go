@@ -8,10 +8,12 @@ import (
 	"github.com/va-voice-gateway/nlp"
 	"github.com/va-voice-gateway/tts"
 	"log"
+	"regexp"
 )
 
 var (
 	AriClient *ari.Client
+	ReNewLineChar = regexp.MustCompile(`\n`)
 )
 
 // helper composite function to perform nlp, tts and asterisk play
@@ -28,9 +30,12 @@ func Nlp_tts_play(clientId *string, botId *string, language *string, nlpRequest 
 		return
 	}
 
+	escapedText := ReNewLineChar.ReplaceAllString(nlpRes.Text, "\\n")
+	log.Printf("Invoking TTS %s\n", escapedText)
+
 	ttsRes, err := tts.InvokeTTS(tts.TTSReq{
 		BotId: *botId,
-		Text: nlpRes.Text,
+		Text: escapedText,
 		Lang: *language,
 	})
 	if err != nil {
