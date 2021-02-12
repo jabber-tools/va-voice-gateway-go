@@ -197,7 +197,7 @@ func (v *VAP) InvokeNLP(request *NLPRequest) (*NLPResponse, error) {
 		return nil, err
 	}
 
-	log.Trace("InvokeNLP: raw response: %v\n", string(body))
+	log.Tracef("InvokeNLP: raw response: %v\n", string(body))
 
 	vapResponse := &VAPResponse{}
 	err = json.Unmarshal(body, vapResponse)
